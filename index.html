@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Học Toán cùng Thầy Tú</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-mml-chtml.min.js" async></script>
+<style>
+  :root {
+    --bg: #0f1224;
+    --card: #181c36;
+    --line: rgba(255,255,255,.08);
+    --text: #eef0ff;
+    --muted: #9aa0c8;
+    --c10: #22d3ee;
+    --c11: #a78bfa;
+    --c12: #f472b6;
+    --accent: #fbbf24;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: "Segoe UI", system-ui, -apple-system, Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+    line-height: 1.6;
+  }
+
+  /* ---------- Nền động ---------- */
+  .bg-math {
+    position: fixed; inset: 0; z-index: -1; pointer-events: none; overflow: hidden;
+  }
+  .bg-math span {
+    position: absolute; bottom: -60px; color: rgba(255,255,255,.06);
+    font-family: "Times New Roman", serif; font-style: italic; user-select: none;
+    animation: float linear infinite;
+  }
+  @keyframes float {
+    from { transform: translateY(0) rotate(0deg); }
+    to   { transform: translateY(-115vh) rotate(360deg); }
+  }
+
+  /* ---------- Header ---------- */
+  header {
+    position: sticky; top: 0; z-index: 50;
+    backdrop-filter: blur(12px);
+    background: rgba(15,18,36,.75);
+    border-bottom: 1px solid var(--line);
+  }
+  .nav {
+    max-width: 1200px; margin: auto; padding: 14px 20px;
+    display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  }
+  .logo { font-weight: 800; font-size: 1.2rem; display: flex; align-items: center; gap: 10px; }
+  .logo-badge {
+    width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center;
+    background: linear-gradient(135deg, var(--c10), var(--c11), var(--c12));
+    font-size: 1.3rem; animation: pulse 2.5s ease-in-out infinite;
+  }
+  @keyframes pulse { 0%,100% { transform: scale(1) rotate(0); } 50% { transform: scale(1.08) rotate(-6deg); } }
+  nav a {
+    color: var(--muted); text-decoration: none; margin-left: 18px; font-weight: 500;
+    transition: color .2s;
+  }
+  nav a:hover { color: var(--text); }
+
+  /* ---------- Hero ---------- */
+  .hero {
+    max-width: 1200px; margin: auto; padding: 70px 20px 40px;
+    text-align: center; position: relative;
+  }
+  .hero h1 {
+    font-size: clamp(2.2rem, 6vw, 4rem); font-weight: 900; line-height: 1.1;
+    background: linear-gradient(90deg, var(--c10), var(--c11), var(--c12), var(--accent));
+    background-size: 300% auto;
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    animation: shine 6s linear infinite;
+  }
+  @keyframes shine { to { background-position: 300% center; } }
+  .hero p.sub { color: var(--muted); font-size: 1.15rem; margin-top: 14px; max-width: 640px; margin-inline: auto; }
+  .hero .formula {
+    margin-top: 26px; font-size: 1.25rem; color: var(--accent);
+    font-family: "Cambria Math", "Times New Roman", serif;
+  }
+  .stats {
+    display: flex; flex-wrap: wrap; justify-content: center; gap: 14px; margin-top: 34px;
+  }
+  .stat {
+    background: var(--card); border: 1px solid var(--line); border-radius: 16px;
+    padding: 14px 22px; min-width: 150px;
+  }
+  .stat b { display: block; font-size: 1.6rem; color: var(--accent); }
+  .stat small { color: var(--muted); }
+
+  .cta {
+    display: inline-block; margin-top: 30px; padding: 14px 30px; border-radius: 999px;
+    background: linear-gradient(90deg, var(--c10), var(--c11));
+    color: #0b1020; font-weight: 800; text-decoration: none;
+    box-shadow: 0 10px 30px rgba(167,139,250,.35);
+    transition: transform .2s, box-shadow .2s;
+  }
+  .cta:hover { transform: translateY(-3px) scale(1.03); box-shadow: 0 16px 40px rgba(34,211,238,.35); }
+
+  /* ---------- Tìm kiếm & lọc ---------- */
+  .toolbar {
+    max-width: 1200px; margin: 40px auto 10px; padding: 0 20px;
+    display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between;
+  }
+  .tabs { display: flex; gap: 8px; flex-wrap: wrap; }
+  .tab {
+    border: 1px solid var(--line); background: var(--card); color: var(--muted);
+    padding: 10px 18px; border-radius: 12px; cursor: pointer; font-weight: 600;
+    transition: all .25s; font-size: .95rem;
+  }
+  .tab:hover { color: var(--text); transform: translateY(-2px); }
+  .tab.active { color: #0b1020; border-color: transparent; }
+  .tab[data-g="all"].active { background: var(--accent); }
+  .tab[data-g="10"].active { background: var(--c10); }
+  .tab[data-g="11"].active { background: var(--c11); }
+  .tab[data-g="12"].active { background: var(--c12); }
+  .search {
+    flex: 1; min-width: 220px; max-width: 360px; position: relative;
+  }
+  .search input {
+    width: 100%; padding: 12px 16px 12px 42px; border-radius: 12px;
+    border: 1px solid var(--line); background: var(--card); color: var(--text);
+    font-size: .95rem; outline: none; transition: border .2s, box-shadow .2s;
+  }
+  .search input:focus { border-color: var(--c10); box-shadow: 0 0 0 4px rgba(34,211,238,.15); }
+  .search::before { content: "🔍"; position: absolute; left: 14px; top: 50%; transform: translateY(-50%); }
+
+  /* ---------- Lưới bài học ---------- */
+  main { max-width: 1200px; margin: auto; padding: 20px 20px 80px; }
+  .grade-section { margin-top: 36px; animation: fadeUp .6s both; }
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: none; } }
+  .grade-head {
+    display: flex; align-items: center; gap: 14px; margin-bottom: 18px;
+  }
+  .grade-head .num {
+    width: 60px; height: 60px; border-radius: 18px; display: grid; place-items: center;
+    font-size: 1.6rem; font-weight: 900; color: #0b1020;
+  }
+  .grade-head h2 { font-size: 1.5rem; }
+  .grade-head p { color: var(--muted); font-size: .95rem; }
+
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 18px; }
+
+  .lesson {
+    position: relative; background: var(--card); border: 1px solid var(--line);
+    border-radius: 18px; padding: 22px; text-decoration: none; color: inherit;
+    display: flex; flex-direction: column; gap: 10px; overflow: hidden;
+    transition: transform .3s, box-shadow .3s, border-color .3s;
+  }
+  .lesson::after {
+    content: ""; position: absolute; inset: 0; opacity: 0; transition: opacity .3s;
+    background: radial-gradient(circle at var(--mx,50%) var(--my,0%), rgba(255,255,255,.12), transparent 60%);
+  }
+  .lesson:hover { transform: translateY(-6px); box-shadow: 0 18px 40px rgba(0,0,0,.35); border-color: var(--gc); }
+  .lesson:hover::after { opacity: 1; }
+  .lesson .idx { font-size: .8rem; color: var(--gc); font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+  .lesson h3 { font-size: 1.12rem; line-height: 1.35; }
+  .lesson p { color: var(--muted); font-size: .92rem; flex: 1; }
+  .lesson .foot { display: flex; justify-content: space-between; align-items: center; margin-top: 6px; }
+  .tag {
+    font-size: .75rem; padding: 4px 10px; border-radius: 999px; font-weight: 700;
+    background: rgba(255,255,255,.07); color: var(--muted);
+  }
+  .tag.ready { background: rgba(52,211,153,.15); color: #34d399; }
+  .tag.soon  { background: rgba(251,191,36,.12); color: var(--accent); }
+  .go { color: var(--gc); font-weight: 700; font-size: .9rem; }
+  .lesson.locked { opacity: .6; cursor: default; }
+  .lesson.locked:hover { transform: none; box-shadow: none; }
+
+  .empty { text-align: center; color: var(--muted); padding: 40px; display: none; }
+
+  /* ---------- Thanh tiến độ ---------- */
+  .progress-wrap { margin-top: 10px; }
+  .progress { height: 8px; border-radius: 999px; background: rgba(255,255,255,.07); overflow: hidden; }
+  .progress > div {
+    height: 100%; width: 0; border-radius: 999px; transition: width 1.2s cubic-bezier(.2,.8,.2,1);
+    background: linear-gradient(90deg, var(--c10), var(--c11), var(--c12));
+  }
+
+  /* ---------- Mẹo / Lời nhắn ---------- */
+  .tip {
+    margin: 40px auto 0; max-width: 1200px; padding: 22px 26px; border-radius: 18px;
+    background: linear-gradient(135deg, rgba(34,211,238,.12), rgba(244,114,182,.12));
+    border: 1px dashed rgba(251,191,36,.5);
+  }
+  .tip b { color: var(--accent); }
+
+  footer {
+    text-align: center; color: var(--muted); padding: 30px 20px 50px; font-size: .9rem;
+    border-top: 1px solid var(--line);
+  }
+
+
+  /* ---------- Form thêm bài ---------- */
+  .add-btn {
+    border: none; cursor: pointer; font-weight: 700; padding: 10px 18px; border-radius: 12px;
+    background: linear-gradient(90deg, var(--c12), var(--accent)); color: #0b1020; transition: transform .2s;
+  }
+  .add-btn:hover { transform: translateY(-2px); }
+  .panel {
+    max-width: 1200px; margin: 20px auto 0; padding: 0 20px; display: none;
+  }
+  .panel.open { display: block; animation: fadeUp .4s both; }
+  .panel-box {
+    background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 24px;
+  }
+  .panel-box h3 { margin-bottom: 14px; color: var(--accent); }
+  .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+  .form-grid label { display: flex; flex-direction: column; gap: 6px; font-size: .88rem; color: var(--muted); }
+  .form-grid .full { grid-column: 1 / -1; }
+  .panel input, .panel select, .panel textarea {
+    background: var(--bg); color: var(--text); border: 1px solid var(--line); border-radius: 10px;
+    padding: 10px 12px; font-size: .95rem; font-family: inherit; outline: none;
+  }
+  .panel input:focus, .panel select:focus, .panel textarea:focus { border-color: var(--c10); }
+  .panel textarea { min-height: 70px; resize: vertical; }
+  .btn-row { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
+  .btn {
+    border: 1px solid var(--line); background: var(--bg); color: var(--text); cursor: pointer;
+    padding: 10px 16px; border-radius: 10px; font-weight: 600;
+  }
+  .btn.primary { background: var(--c10); color: #0b1020; border-color: transparent; }
+  .hint { color: var(--muted); font-size: .85rem; margin-top: 10px; }
+  .export-box { margin-top: 14px; display: none; }
+  .export-box.open { display: block; }
+  .export-box textarea { width: 100%; font-family: Consolas, monospace; font-size: .85rem; min-height: 120px; }
+  .del {
+    position: absolute; top: 10px; right: 10px; z-index: 2; border: none; cursor: pointer;
+    background: rgba(248,113,113,.15); color: #f87171; width: 30px; height: 30px; border-radius: 50%;
+    font-size: 1rem; line-height: 1;
+  }
+  .del:hover { background: rgba(248,113,113,.3); }
+  .toast {
+    position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); z-index: 99;
+    background: var(--card); border: 1px solid var(--c12); padding: 12px 20px; border-radius: 12px;
+    opacity: 0; transition: opacity .3s; pointer-events: none;
+  }
+  .toast.show { opacity: 1; }
+
+  /* ---------- Responsive ---------- */
+  @media (max-width: 640px) {
+    nav a { display: none; }
+    .hero { padding-top: 40px; }
+    .toolbar { flex-direction: column; align-items: stretch; }
+    .search { max-width: none; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation: none !important; transition: none !important; }
+  }
+</style>
+</head>
+<body>
+
+<div class="bg-math" id="bgMath"></div>
+
+<header>
+  <div class="nav">
+    <div class="logo"><span class="logo-badge">∑</span> Học Toán cùng Thầy Tú</div>
+    <nav>
+      <a href="#lop10">Lớp 10</a>
+      <a href="#lop11">Lớp 11</a>
+      <a href="#lop12">Lớp 12</a>
+      <a href="#tip">Lời khuyên</a>
+    </nav>
+  </div>
+</header>
+
+<section class="hero">
+  <h1>Toán học không khó,<br>chỉ cần đúng cách!</h1>
+  <p class="sub">Bài giảng trực quan, hình động 3D, ví dụ gần gũi và bài tập theo từng chương.
+     Chọn lớp và bắt đầu thôi nào. 🚀</p>
+  <div class="formula">$$ a^2 + b^2 = c^2 \qquad e^{i\pi} + 1 = 0 $$</div>
+
+  <div class="stats">
+    <div class="stat"><b data-count="0">0</b><small>Bài học Toán 10</small></div>
+    <div class="stat"><b data-count="2">0</b><small>Bài học Toán 11</small></div>
+    <div class="stat"><b data-count="0">0</b><small>Bài học Toán 12</small></div>
+  </div>
+  <a class="cta" href="#lop10">Bắt đầu học ngay →</a>
+</section>
+
+<div class="toolbar">
+  <div class="tabs" id="tabs">
+    <button class="tab active" data-g="all">Tất cả</button>
+    <button class="tab" data-g="10">Lớp 10</button>
+    <button class="tab" data-g="11">Lớp 11</button>
+    <button class="tab" data-g="12">Lớp 12</button>
+  </div>
+  <div class="search">
+    <input id="q" type="text" placeholder="Tìm bài học... (VD: vectơ, đạo hàm)">
+  </div>
+  <button class="add-btn" id="toggleAdd">＋ Thêm bài mới</button>
+</div>
+
+<section class="panel" id="addPanel">
+  <div class="panel-box">
+    <h3>📝 Thêm bài học mới</h3>
+    <form id="addForm" autocomplete="off">
+      <div class="form-grid">
+        <label>Lớp
+          <select id="fGrade">
+            <option value="10">Lớp 10</option>
+            <option value="11" selected>Lớp 11</option>
+            <option value="12">Lớp 12</option>
+          </select>
+        </label>
+        <label>Tên bài
+          <input id="fTitle" required placeholder="VD: Đường thẳng song song với mặt phẳng">
+        </label>
+        <label>File HTML (tên file hoặc link)
+          <input id="fHref" placeholder="VD: 12_NGUYEN_HAM__index.html">
+        </label>
+        <label class="full">Mô tả ngắn
+          <textarea id="fDesc" placeholder="Một câu mô tả nội dung bài học"></textarea>
+        </label>
+      </div>
+      <div class="btn-row">
+        <button class="btn primary" type="submit">Thêm bài</button>
+        <button class="btn" type="button" id="btnExport">Xuất để lưu vĩnh viễn</button>
+        <button class="btn" type="button" id="btnClose">Đóng</button>
+      </div>
+    </form>
+    <p class="hint">Bài thêm ở đây chỉ lưu trên trình duyệt này. Muốn lưu cho mọi người xem, bấm "Xuất để lưu vĩnh viễn" rồi dán nội dung vào mục GRADES trong file index.html.</p>
+    <div class="export-box" id="exportBox">
+      <textarea id="exportText" readonly></textarea>
+      <div class="btn-row"><button class="btn" type="button" id="btnCopy">Sao chép</button></div>
+    </div>
+  </div>
+</section>
+<div class="toast" id="toast"></div>
+
+<main id="content"></main>
+
+<section class="tip" id="tip">
+  <b>💡 Lời khuyên từ Thầy Tú:</b>
+  Mỗi bài học nên học theo thứ tự: <i>xem hình → tự làm ví dụ → làm bài tập nhỏ</i>.
+  Đừng ngại sai, sai là cách não bộ học nhanh nhất!
+</section>
+
+<footer>
+  © Thầy Tú · Học Toán THPT · Chúc các em học tốt! ✨
+</footer>
+
+<script>
+/* =====================================================
+   DỮ LIỆU BÀI HỌC — Thầy chỉ cần sửa ở đây!
+   - href: đường dẫn tới bài học (để "" nếu chưa có)
+   - status: "ready" (đã có) hoặc "soon" (sắp ra mắt)
+   ===================================================== */
+const GRADES = [
+  {
+    g: "10", id: "lop10", title: "Toán 10", color: "var(--c10)", hex: "#22d3ee",
+    desc: "Nền tảng: mệnh đề, tập hợp, hàm số, vectơ, hệ thức lượng",
+    lessons: [
+    ]
+  },
+  {
+    g: "11", id: "lop11", title: "Toán 11", color: "var(--c11)", hex: "#a78bfa",
+    desc: "Lượng giác, dãy số, giới hạn, đạo hàm và quan hệ song song, vuông góc trong không gian",
+    lessons: [
+      { t: "Quan hệ song song trong không gian", d: "Hai đường thẳng song song: mô hình 3D tương tác, xoay quan sát từ mọi góc.", href: "11_HAI_DUONG_THANG_SONG_SONG__index.html", status: "ready" },
+      { t: "Đường thẳng song song với mặt phẳng", d: "Điều kiện song song, tìm giao tuyến và thiết diện với mô hình 3D tương tác.", href: "11_DUONG_THANG_SONG_SONG_MAT_PHANG__index.html", status: "ready" },
+    ]
+  },
+  {
+    g: "12", id: "lop12", title: "Toán 12", color: "var(--c12)", hex: "#f472b6",
+    desc: "Khảo sát hàm số, mũ-logarit, tích phân, tọa độ không gian và xác suất",
+    lessons: [
+    ]
+  }
+];
+
+/* ---------- Bài do giáo viên tự thêm (lưu trên trình duyệt) ---------- */
+const STORE_KEY = "thaytu_custom_lessons";
+function loadCustom() {
+  try { return JSON.parse(localStorage.getItem(STORE_KEY) || "[]"); } catch (e) { return []; }
+}
+function saveCustom(arr) {
+  try { localStorage.setItem(STORE_KEY, JSON.stringify(arr)); } catch (e) {}
+}
+function applyCustom() {
+  const seen = new Set();
+  const clean = [];
+  loadCustom().forEach(c => {
+    const key = c.g + "|" + c.t.toLowerCase();
+    if (seen.has(key)) return;
+    seen.add(key);
+    clean.push(c);
+    const G = GRADES.find(x => x.g === c.g);
+    if (G && c.status === "ready" && !G.lessons.some(x => x.t.toLowerCase() === c.t.toLowerCase()))
+      G.lessons.push({ t: c.t, d: c.d, href: c.href, status: c.status, custom: true });
+  });
+  saveCustom(clean);
+}
+applyCustom();
+
+/* ---------- Render ---------- */
+const content = document.getElementById("content");
+let currentGrade = "all";
+let currentQuery = "";
+
+function render() {
+  const q = currentQuery.trim().toLowerCase();
+  content.innerHTML = "";
+  let shown = 0;
+
+  GRADES.forEach(G => {
+    if (currentGrade !== "all" && currentGrade !== G.g) return;
+
+    const list = G.lessons.filter(l =>
+      !q || l.t.toLowerCase().includes(q) || l.d.toLowerCase().includes(q)
+    );
+    if (!list.length) return;
+    shown += list.length;
+
+    const ready = G.lessons.filter(l => l.status === "ready").length;
+    const pct = Math.round(ready / G.lessons.length * 100);
+
+    const section = document.createElement("section");
+    section.className = "grade-section";
+    section.id = G.id;
+    section.innerHTML = `
+      <div class="grade-head">
+        <div class="num" style="background:${G.color}">${G.g}</div>
+        <div>
+          <h2>${G.title}</h2>
+          <p>${G.desc}</p>
+          <div class="progress-wrap" style="width:260px;max-width:70vw">
+            <div class="progress"><div data-w="${pct}"></div></div>
+            <small style="color:var(--muted)">${ready}/${G.lessons.length} bài đã sẵn sàng</small>
+          </div>
+        </div>
+      </div>
+      <div class="grid"></div>`;
+
+    const grid = section.querySelector(".grid");
+    list.forEach((l, i) => {
+      const isReady = l.status === "ready" && l.href;
+      const el = document.createElement(isReady ? "a" : "div");
+      el.className = "lesson" + (isReady ? "" : " locked");
+      if (isReady) el.href = l.href;
+      el.style.setProperty("--gc", G.hex);
+      if (l.custom) {
+        const del = document.createElement("button");
+        del.className = "del";
+        del.title = "Xóa bài này";
+        del.textContent = "×";
+        del.addEventListener("click", e => {
+          e.preventDefault(); e.stopPropagation();
+          if (!confirm("Xóa bài \"" + l.t + "\" khỏi trình duyệt này?")) return;
+          const arr = loadCustom().filter(x => !(x.g === G.g && x.t === l.t));
+          saveCustom(arr);
+          G.lessons = G.lessons.filter(x => x !== l);
+          render();
+        });
+        el.appendChild(del);
+      }
+      el.insertAdjacentHTML("beforeend", `
+        <span class="idx">Bài ${String(i + 1).padStart(2, "0")} · Lớp ${G.g}</span>
+        <h3>${l.t}</h3>
+        <p>${l.d}</p>
+        <div class="foot">
+          <span class="tag ${isReady ? "ready" : "soon"}">${isReady ? "✅ Sẵn sàng" : "⏳ Sắp ra mắt"}</span>
+          ${isReady ? `<span class="go">Vào học →</span>` : ""}
+        </div>`);
+      if (isReady) {
+        el.addEventListener("mousemove", e => {
+          const r = el.getBoundingClientRect();
+          el.style.setProperty("--mx", (e.clientX - r.left) + "px");
+          el.style.setProperty("--my", (e.clientY - r.top) + "px");
+        });
+      }
+      grid.appendChild(el);
+    });
+
+    content.appendChild(section);
+  });
+
+  if (!shown) {
+    content.innerHTML = `<div class="empty" style="display:block">Không tìm thấy bài nào. Thử từ khóa khác nhé! 🔎</div>`;
+  }
+
+  // Animate progress bars
+  requestAnimationFrame(() => {
+    document.querySelectorAll(".progress > div").forEach(b => b.style.width = b.dataset.w + "%");
+  });
+
+  if (window.MathJax && MathJax.typesetPromise) MathJax.typesetPromise([content]).catch(() => {});
+}
+
+/* ---------- Tabs & tìm kiếm ---------- */
+document.getElementById("tabs").addEventListener("click", e => {
+  const btn = e.target.closest(".tab");
+  if (!btn) return;
+  document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+  btn.classList.add("active");
+  currentGrade = btn.dataset.g;
+  render();
+});
+document.getElementById("q").addEventListener("input", e => {
+  currentQuery = e.target.value;
+  render();
+});
+
+/* ---------- Nền công thức toán bay lên ---------- */
+const formulas = ["∫", "∑", "π", "√x", "sin θ", "e^{iπ}", "∞", "Δ", "f'(x)", "a²+b²=c²", "lim", "∈", "α", "∇", "log x", "vec(v)"];
+const bg = document.getElementById("bgMath");
+formulas.forEach((f, i) => {
+  const s = document.createElement("span");
+  s.textContent = f;
+  s.style.left = (Math.random() * 95) + "%";
+  s.style.fontSize = (1.2 + Math.random() * 2.5) + "rem";
+  s.style.animationDuration = (18 + Math.random() * 22) + "s";
+  s.style.animationDelay = (-Math.random() * 30) + "s";
+  bg.appendChild(s);
+});
+
+/* ---------- Đếm số liệu ---------- */
+document.querySelectorAll("[data-count]").forEach(el => {
+  const target = +el.dataset.count;
+  let n = 0;
+  const step = () => {
+    n++;
+    el.textContent = n;
+    if (n < target) setTimeout(step, 80);
+  };
+  setTimeout(step, 400);
+});
+
+
+/* ---------- Form thêm bài ---------- */
+const addPanel = document.getElementById("addPanel");
+document.getElementById("toggleAdd").addEventListener("click", () => {
+  addPanel.classList.toggle("open");
+  if (addPanel.classList.contains("open")) document.getElementById("fTitle").focus();
+});
+document.getElementById("btnClose").addEventListener("click", () => addPanel.classList.remove("open"));
+
+function toast(msg) {
+  const t = document.getElementById("toast");
+  t.textContent = msg; t.classList.add("show");
+  clearTimeout(toast._t); toast._t = setTimeout(() => t.classList.remove("show"), 2200);
+}
+
+document.getElementById("addForm").addEventListener("submit", e => {
+  e.preventDefault();
+  const g = document.getElementById("fGrade").value;
+  const t = document.getElementById("fTitle").value.trim();
+  const d = document.getElementById("fDesc").value.trim() || "Bài học mới.";
+  const href = document.getElementById("fHref").value.trim();
+  if (!t) return toast("Thầy nhập tên bài nhé!");
+  const G = GRADES.find(x => x.g === g);
+  if (G.lessons.some(x => x.t.toLowerCase() === t.toLowerCase())) return toast("Bài này đã có trong lớp " + g + " rồi!");
+  const lesson = { t, d, href, status: href ? "ready" : "soon" };
+  const arr = loadCustom();
+  arr.push({ g, ...lesson });
+  saveCustom(arr);
+  G.lessons.push({ ...lesson, custom: true });
+  e.target.reset();
+  document.getElementById("fGrade").value = g;
+  render();
+  document.getElementById(G.id).scrollIntoView({ behavior: "smooth", block: "start" });
+  toast("Đã thêm bài: " + t);
+});
+
+document.getElementById("btnExport").addEventListener("click", () => {
+  const arr = loadCustom();
+  const lines = arr.length
+    ? arr.map(c => `      { t: ${JSON.stringify(c.t)}, d: ${JSON.stringify(c.d)}, href: ${JSON.stringify(c.href)}, status: ${JSON.stringify(c.status)} },`)
+    : ["(Chưa có bài nào được thêm.)"];
+  const box = document.getElementById("exportBox");
+  box.classList.add("open");
+  document.getElementById("exportText").value = lines.join("\n");
+});
+
+document.getElementById("btnCopy").addEventListener("click", () => {
+  const ta = document.getElementById("exportText");
+  ta.select();
+  try { navigator.clipboard.writeText(ta.value); } catch (e) { document.execCommand("copy"); }
+  toast("Đã sao chép");
+});
+
+render();
+</script>
+</body>
+</html>
