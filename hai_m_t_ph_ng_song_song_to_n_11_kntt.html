@@ -1,0 +1,1312 @@
+<!DOCTYPE html>
+<html lang="vi" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Học Toán Cùng Thầy Tôn Tú - Hai Mặt Phẳng Song Song (Toán 11 KNTT)</title>
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0f9ff',
+                            500: '#0284c7',
+                            600: '#0369a1',
+                            700: '#075985',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Fira+Code:wght@400;600&display=swap" rel="stylesheet">
+    
+    <!-- Three.js & OrbitControls -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <!-- KaTeX CDN & Auto-render extension -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js"></script>
+
+    <style>
+        * {
+            touch-action: manipulation;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            user-select: none;
+            overflow: hidden;
+            background-color: #090d16;
+            margin: 0;
+            padding: 0;
+        }
+        .math-font {
+            font-family: 'STIX Two Math', 'Times New Roman', serif;
+            font-style: italic;
+        }
+        /* Custom Scrollbar */
+        .custom-scroll::-webkit-scrollbar {
+            width: 5px;
+        }
+        .custom-scroll::-webkit-scrollbar-track {
+            background: rgba(15, 23, 42, 0.8);
+        }
+        .custom-scroll::-webkit-scrollbar-thumb {
+            background: rgba(51, 65, 85, 0.8);
+            border-radius: 4px;
+        }
+        .custom-scroll::-webkit-scrollbar-thumb:hover {
+            background: rgba(100, 116, 139, 1);
+        }
+        /* 3D Label Overlays */
+        .label-3d {
+            position: absolute;
+            pointer-events: none;
+            transition: opacity 0.15s ease-out;
+            transform: translate(-50%, -50%);
+            white-space: nowrap;
+            font-weight: 700;
+            text-shadow: 0 2px 5px rgba(0,0,0,0.95);
+            z-index: 10;
+        }
+        /* Glassmorphism Effect */
+        .glass-card {
+            background: rgba(15, 23, 42, 0.88);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        /* Glow Effects */
+        .glow-emerald {
+            box-shadow: 0 0 15px rgba(16, 185, 129, 0.4);
+        }
+        .glow-amber {
+            box-shadow: 0 0 15px rgba(245, 158, 11, 0.4);
+        }
+        .glow-purple {
+            box-shadow: 0 0 15px rgba(168, 85, 247, 0.4);
+        }
+        .glow-sky {
+            box-shadow: 0 0 15px rgba(14, 165, 233, 0.4);
+        }
+        .katex {
+            font-size: 1.0em;
+        }
+        #canvas-container canvas {
+            touch-action: none;
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 h-screen w-screen flex flex-col overflow-hidden">
+
+    <!-- ================================================================= -->
+    <!-- TOP FIXED BRAND HEADER BANNER                                      -->
+    <!-- ================================================================= -->
+    <header class="w-full bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 text-slate-950 font-black py-2.5 px-4 shadow-xl border-b border-amber-300 text-sm md:text-base tracking-wider uppercase flex items-center justify-between z-30 shrink-0">
+        <div class="flex items-center gap-2">
+            <i class="fa-solid fa-graduation-cap text-lg md:text-xl"></i>
+            <span class="font-extrabold tracking-wide">HỌC TOÁN CÙNG THẦY TÔN TÚ</span>
+        </div>
+        
+        <!-- Mobile View Switcher Buttons -->
+        <div class="flex md:hidden items-center bg-slate-950/40 rounded-lg p-0.5 text-xs text-white">
+            <button id="mobile-tab-3d" class="px-2.5 py-1 rounded-md bg-amber-400 text-slate-950 font-bold transition">
+                <i class="fa-solid fa-cube mr-1"></i> Mô phỏng 3D
+            </button>
+            <button id="mobile-tab-math" class="px-2.5 py-1 rounded-md hover:bg-slate-800 transition">
+                <i class="fa-solid fa-book-open mr-1"></i> Lý thuyết & Điều khiển
+            </button>
+        </div>
+    </header>
+
+    <!-- ================================================================= -->
+    <!-- MAIN CONTENT CONTAINER (SIDEBAR LEFT + 3D VIEWPORT RIGHT)         -->
+    <!-- ================================================================= -->
+    <div class="flex-1 w-full flex flex-col md:flex-row overflow-hidden relative">
+        
+        <!-- SIDEBAR PANEL -->
+        <aside id="sidebar-panel" class="custom-scroll w-full md:w-[400px] lg:w-[430px] shrink-0 h-full flex flex-col bg-slate-900/95 border-r border-slate-800 z-20 shadow-2xl overflow-y-auto p-3.5 gap-3 transition-all duration-300 hidden md:flex">
+            
+            <!-- HEADER BADGE -->
+            <div class="glass-card p-3 rounded-xl flex items-center gap-3 border border-sky-500/30 shadow-lg shrink-0">
+                <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-sky-500 via-blue-600 to-indigo-700 flex items-center justify-center text-white text-lg font-black shadow-md shrink-0">
+                    <i class="fa-solid fa-layer-group"></i>
+                </div>
+                <div>
+                    <h1 class="font-extrabold text-sm md:text-base leading-tight tracking-wide text-white">
+                        HAI MẶT PHẲNG SONG SONG
+                    </h1>
+                    <p class="text-[11px] text-sky-400 font-medium mt-0.5">
+                        Hình học 11 • Bài 13 (Kết nối tri thức với cuộc sống)
+                    </p>
+                </div>
+            </div>
+
+            <!-- SECTION 1: CHỌN NỘI DUNG MÔ PHỎNG THEO SGK KNTT -->
+            <div class="space-y-1.5 shrink-0">
+                <div class="text-[11px] font-bold text-slate-400 uppercase tracking-wider flex items-center justify-between">
+                    <span><i class="fa-solid fa-book-open text-sky-400 mr-1"></i> Nội dung trọng tâm SGK KNTT</span>
+                    <span class="text-[10px] text-slate-500 font-normal">4 mô hình chuẩn</span>
+                </div>
+                
+                <div class="grid grid-cols-1 gap-1.5 text-xs">
+                    <!-- Mode 1: Định lí 1 (Dấu hiệu nhận biết) -->
+                    <button id="mode-theorem1" class="mode-btn p-2.5 rounded-xl border border-emerald-500/40 bg-emerald-950/30 hover:bg-emerald-900/40 text-left transition flex items-center justify-between group active">
+                        <div>
+                            <div class="font-bold text-xs text-emerald-400 flex items-center gap-1.5">
+                                <i class="fa-solid fa-equals"></i> 1. Định lí 1: Dấu hiệu nhận biết $(P) \parallel (Q)$
+                            </div>
+                            <div class="text-[11px] text-slate-300 mt-0.5">$a, b \subset (P)$ cắt nhau tại $M$ và cùng song song với $(Q)$</div>
+                        </div>
+                        <div class="w-5 h-5 rounded-full bg-emerald-500/20 border border-emerald-500/50 flex items-center justify-center shrink-0">
+                            <i class="fa-solid fa-check text-emerald-400 text-xs opacity-0 group-[.active]:opacity-100"></i>
+                        </div>
+                    </button>
+
+                    <!-- Mode 2: Định lí 2 (Tính chất giao tuyến song song) -->
+                    <button id="mode-theorem2" class="mode-btn p-2.5 rounded-xl border border-indigo-500/40 bg-indigo-950/30 hover:bg-indigo-900/40 text-left transition flex items-center justify-between group">
+                        <div>
+                            <div class="font-bold text-xs text-indigo-400 flex items-center gap-1.5">
+                                <i class="fa-solid fa-diagram-project"></i> 2. Định lí 2: Mặt phẳng $(R)$ cắt $(P) \parallel (Q)$
+                            </div>
+                            <div class="text-[11px] text-slate-300 mt-0.5">Hai giao tuyến $a = (R)\cap(P)$ và $b = (R)\cap(Q)$ song song</div>
+                        </div>
+                        <div class="w-5 h-5 rounded-full bg-indigo-500/20 border border-indigo-500/50 flex items-center justify-center shrink-0">
+                            <i class="fa-solid fa-check text-indigo-400 text-xs opacity-0 group-[.active]:opacity-100"></i>
+                        </div>
+                    </button>
+
+                    <!-- Mode 3: Định lí Thalès trong không gian -->
+                    <button id="mode-thales" class="mode-btn p-2.5 rounded-xl border border-cyan-500/40 bg-cyan-950/30 hover:bg-cyan-900/40 text-left transition flex items-center justify-between group">
+                        <div>
+                            <div class="font-bold text-xs text-cyan-400 flex items-center gap-1.5">
+                                <i class="fa-solid fa-ruler-combined"></i> 3. Định lí Thalès: 3 mặt phẳng song song
+                            </div>
+                            <div class="text-[11px] text-slate-300 mt-0.5">$(P) \parallel (Q) \parallel (R)$ chắn trên hai cát tuyến $d, d'$ các đoạn tỉ lệ</div>
+                        </div>
+                        <div class="w-5 h-5 rounded-full bg-cyan-500/20 border border-cyan-500/50 flex items-center justify-center shrink-0">
+                            <i class="fa-solid fa-check text-cyan-400 text-xs opacity-0 group-[.active]:opacity-100"></i>
+                        </div>
+                    </button>
+
+                    <!-- Mode 4: Vị trí tương đối (Cắt nhau & Trùng nhau) -->
+                    <button id="mode-intersect" class="mode-btn p-2.5 rounded-xl border border-amber-500/40 bg-amber-950/30 hover:bg-amber-900/40 text-left transition flex items-center justify-between group">
+                        <div>
+                            <div class="font-bold text-xs text-amber-400 flex items-center gap-1.5">
+                                <i class="fa-solid fa-xmark"></i> 4. Hai mặt phẳng cắt nhau: $(P) \cap (Q) = c$
+                            </div>
+                            <div class="text-[11px] text-slate-300 mt-0.5">Khi $(P)$ và $(Q)$ có điểm chung (góc nghiêng $\theta \neq 0^\circ$)</div>
+                        </div>
+                        <div class="w-5 h-5 rounded-full bg-amber-500/20 border border-amber-500/50 flex items-center justify-center shrink-0">
+                            <i class="fa-solid fa-check text-amber-400 text-xs opacity-0 group-[.active]:opacity-100"></i>
+                        </div>
+                    </button>
+                </div>
+            </div>
+
+            <hr class="border-slate-800 shrink-0">
+
+            <!-- SECTION 2: TÙY CHỈNH THÔNG SỐ TRỰC QUAN (SLIDERS) -->
+            <div class="space-y-2 shrink-0">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">
+                        <i class="fa-solid fa-sliders text-sky-400 mr-1"></i> Tùy chỉnh hình học 3D
+                    </span>
+                    <button id="btn-reset-params" class="text-[11px] px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-sky-300 border border-sky-500/30 transition">
+                        Khôi phục mặc định
+                    </button>
+                </div>
+
+                <!-- Distance h between (P) and (Q) -->
+                <div class="bg-slate-950/50 p-2 rounded-xl border border-slate-800/80 space-y-1">
+                    <div class="flex justify-between text-xs">
+                        <span class="text-slate-300 font-medium">Khoảng cách giữa $(P)$ và $(Q)$ ($h$):</span>
+                        <span id="val-height" class="font-mono font-bold text-sky-400">3.6 m</span>
+                    </div>
+                    <input type="range" id="slider-height" min="0" max="5.5" step="0.1" value="3.6"
+                           class="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-sky-400">
+                </div>
+
+                <!-- Tilt angle of Plane (P) -->
+                <div id="ctrl-tilt-box" class="bg-slate-950/50 p-2 rounded-xl border border-slate-800/80 space-y-1">
+                    <div class="flex justify-between text-xs">
+                        <span class="text-slate-300 font-medium">Góc nghiêng mặt phẳng $(P)$ ($\theta$):</span>
+                        <span id="val-tilt" class="font-mono font-bold text-amber-400">0°</span>
+                    </div>
+                    <input type="range" id="slider-tilt" min="-45" max="45" step="1" value="0"
+                           class="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-400">
+                </div>
+
+                <!-- Dynamic contextual slider (Angle between a & b in Theorem 1 / Angle of Plane R in Theorem 2 / Ratio k in Thales) -->
+                <div class="bg-slate-950/50 p-2 rounded-xl border border-purple-500/30 space-y-1">
+                    <div class="flex justify-between text-xs">
+                        <span id="label-param3" class="text-purple-300 font-bold"><i class="fa-solid fa-compass-drafting mr-1"></i> Góc giữa $a$ và $b$ trong $(P)$ ($\varphi$):</span>
+                        <span id="val-param3" class="font-mono font-bold text-purple-400">65°</span>
+                    </div>
+                    <input type="range" id="slider-param3" min="20" max="155" step="1" value="65"
+                           class="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-purple-400">
+                </div>
+            </div>
+
+            <hr class="border-slate-800 shrink-0">
+
+            <!-- SECTION 3: TÙY CHỌN HIỂN THỊ -->
+            <div class="space-y-1.5 shrink-0">
+                <div class="text-xs font-bold text-slate-400 uppercase tracking-wider">
+                    <i class="fa-solid fa-eye text-sky-400 mr-1"></i> Hiển thị trợ giúp trực quan
+                </div>
+
+                <div class="grid grid-cols-1 gap-1.5 text-xs">
+                    <label class="flex items-center justify-between p-2 rounded-lg bg-slate-950/40 hover:bg-slate-800/60 cursor-pointer transition border border-slate-800">
+                        <span class="flex items-center gap-2 text-slate-200">
+                            <span class="w-2.5 h-2.5 rounded-full bg-cyan-400"></span>
+                            Hiện đường gióng vuông góc đo khoảng cách
+                        </span>
+                        <input type="checkbox" id="toggle-dist" checked class="w-4 h-4 accent-cyan-500 rounded cursor-pointer">
+                    </label>
+
+                    <label class="flex items-center justify-between p-2 rounded-lg bg-slate-950/40 hover:bg-slate-800/60 cursor-pointer transition border border-slate-800">
+                        <span class="flex items-center gap-2 text-slate-200">
+                            <i class="fa-solid fa-rotate text-sky-400 text-xs"></i>
+                            Tự động xoay không gian 3D
+                        </span>
+                        <input type="checkbox" id="toggle-autorotate" class="w-4 h-4 accent-sky-500 rounded cursor-pointer">
+                    </label>
+                </div>
+            </div>
+
+            <!-- SECTION 4: THẺ KIẾN THỨC SGK TOÁN 11 KNTT -->
+            <div class="glass-card rounded-xl p-3 flex flex-col gap-2.5 border-l-4 border-emerald-500 shadow-xl mt-auto shrink-0" id="info-card-border">
+                
+                <!-- Dynamic Status Header -->
+                <div class="flex items-center justify-between pb-1 border-b border-slate-800 gap-2">
+                    <span id="info-status-badge" class="px-2.5 py-1 rounded-full text-[11px] font-black uppercase tracking-wider bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 glow-emerald">
+                        (P) // (Q) : SONG SONG
+                    </span>
+                    <span id="info-common-points" class="text-[11px] font-semibold text-slate-300 text-right">
+                        $(P) \cap (Q) = \emptyset$
+                    </span>
+                </div>
+
+                <!-- Mathematical Formula Box -->
+                <div class="bg-slate-950/80 p-2.5 rounded-lg border border-slate-800 text-center">
+                    <div id="formula-caption" class="text-[10px] text-slate-400 mb-0.5">Ký hiệu toán học Định lí 1 (Dấu hiệu nhận biết):</div>
+                    <div id="katex-theorem-formula" class="py-1 overflow-x-auto"></div>
+                </div>
+
+                <!-- SGK Theorem Statement -->
+                <div class="space-y-1">
+                    <div id="theorem-title" class="text-xs font-bold text-amber-400 uppercase tracking-wide flex items-center gap-1.5">
+                        <i class="fa-solid fa-book-bookmark"></i> ĐỊNH LÍ 1 (SGK TOÁN 11 KNTT):
+                    </div>
+                    <div id="theorem-text" class="text-xs text-slate-200 leading-relaxed bg-slate-900/60 p-2.5 rounded-lg border border-slate-800 italic">
+                        "Nếu mặt phẳng <span class="math-font font-bold text-purple-400">(P)</span> chứa hai đường thẳng cắt nhau <span class="math-font font-bold text-red-400">a</span>, <span class="math-font font-bold text-emerald-400">b</span> và <span class="math-font font-bold text-red-400">a</span>, <span class="math-font font-bold text-emerald-400">b</span> cùng song song với mặt phẳng <span class="math-font font-bold text-sky-400">(Q)</span> thì <span class="math-font font-bold text-purple-400">(P)</span> song song với <span class="math-font font-bold text-sky-400">(Q)</span>."
+                    </div>
+                </div>
+
+                <!-- Condition / Property Checklist -->
+                <div class="bg-slate-950/60 p-2 rounded-lg text-xs space-y-1 font-mono">
+                    <div id="cond-1" class="flex items-center gap-1.5 text-emerald-400">
+                        <i class="fa-solid fa-check text-[10px]"></i> <span>1. $a \subset (P), \; b \subset (P)$</span>
+                    </div>
+                    <div id="cond-2" class="flex items-center gap-1.5 text-emerald-400">
+                        <i class="fa-solid fa-check text-[10px]"></i> <span>2. $a \cap b = \{M\}$</span>
+                    </div>
+                    <div id="cond-3" class="flex items-center gap-1.5 text-emerald-400">
+                        <i class="fa-solid fa-check text-[10px]"></i> <span>3. $a \parallel (Q), \; b \parallel (Q) \implies (P) \parallel (Q)$</span>
+                    </div>
+                </div>
+
+                <!-- Real-World Application Note -->
+                <div class="text-[11px] text-slate-300 bg-slate-900/40 p-2 rounded-lg italic border border-slate-800 flex items-start gap-1.5">
+                    <i class="fa-solid fa-lightbulb text-amber-400 text-xs mt-0.5 shrink-0"></i>
+                    <span id="realworld-note">Ứng dụng thực tế: Mặt bàn nằm ngang song song với mặt sàn nhờ hai thanh giằng chéo nhau cùng song song với mặt sàn.</span>
+                </div>
+            </div>
+
+        </aside>
+
+        <!-- RIGHT AREA: 3D VIEWPORT CONTAINER -->
+        <main id="viewport-panel" class="flex-1 h-full relative overflow-hidden bg-slate-950">
+
+            <!-- 3D WebGL Canvas -->
+            <div id="canvas-container" class="w-full h-full cursor-grab active:cursor-grabbing"></div>
+
+            <!-- Dynamic 3D Floating Labels Overlay -->
+            <div id="labels-container" class="absolute inset-0 pointer-events-none overflow-hidden z-10">
+                <div id="label-planeQ" class="label-3d px-2.5 py-1 rounded-md bg-blue-600/90 text-white text-xs border border-blue-300/40 shadow-xl">
+                    Mặt phẳng (Q)
+                </div>
+                <div id="label-planeP" class="label-3d px-2.5 py-1 rounded-md bg-purple-600/90 text-white text-xs border border-purple-300/40 shadow-xl">
+                    Mặt phẳng (P)
+                </div>
+                <div id="label-planeR" class="label-3d px-2.5 py-1 rounded-md bg-teal-600/90 text-white text-xs border border-teal-300/40 shadow-xl hidden">
+                    Mặt phẳng (R)
+                </div>
+                <div id="label-lineA" class="label-3d px-2 py-0.5 rounded bg-red-600/90 text-white text-xs border border-red-300/40 shadow-xl">
+                    <span class="math-font font-bold">a</span>
+                </div>
+                <div id="label-lineB" class="label-3d px-2 py-0.5 rounded bg-emerald-600/90 text-white text-xs border border-emerald-300/40 shadow-xl">
+                    <span class="math-font font-bold">b</span>
+                </div>
+                <div id="label-lineC" class="label-3d px-2.5 py-1 rounded-md bg-amber-500 text-slate-950 font-extrabold text-xs border border-white shadow-xl hidden">
+                    Giao tuyến <span class="math-font font-bold">c</span> = (P) $\cap$ (Q)
+                </div>
+                <div id="label-pointM" class="label-3d px-2 py-0.5 rounded-full bg-amber-400 text-slate-950 font-extrabold text-xs shadow-xl border border-white">
+                    M
+                </div>
+                <!-- Thales Points Labels -->
+                <div id="label-thales-A" class="label-3d px-1.5 py-0.5 rounded bg-red-600/90 text-white text-[11px] hidden">A</div>
+                <div id="label-thales-B" class="label-3d px-1.5 py-0.5 rounded bg-red-600/90 text-white text-[11px] hidden">B</div>
+                <div id="label-thales-C" class="label-3d px-1.5 py-0.5 rounded bg-red-600/90 text-white text-[11px] hidden">C</div>
+                <div id="label-thales-Ap" class="label-3d px-1.5 py-0.5 rounded bg-emerald-600/90 text-white text-[11px] hidden">A'</div>
+                <div id="label-thales-Bp" class="label-3d px-1.5 py-0.5 rounded bg-emerald-600/90 text-white text-[11px] hidden">B'</div>
+                <div id="label-thales-Cp" class="label-3d px-1.5 py-0.5 rounded bg-emerald-600/90 text-white text-[11px] hidden">C'</div>
+            </div>
+
+            <!-- Top Right Utility Buttons -->
+            <div class="absolute top-3 right-3 z-20 flex items-center gap-1.5 pointer-events-auto">
+                <button id="btn-reset-cam" class="p-2 rounded-xl glass-card text-slate-300 hover:text-white hover:bg-slate-800 transition text-xs shadow-lg" title="Đặt lại góc nhìn 3D">
+                    <i class="fa-solid fa-camera-rotate mr-1"></i> Góc nhìn chuẩn
+                </button>
+                <button id="btn-fullscreen" class="p-2 rounded-xl glass-card text-slate-300 hover:text-white hover:bg-slate-800 transition text-xs shadow-lg" title="Toàn màn hình">
+                    <i class="fa-solid fa-expand"></i>
+                </button>
+            </div>
+
+            <!-- Bottom Operation Instruction Bar -->
+            <div class="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 pointer-events-none w-[92%] md:w-auto">
+                <div class="glass-card px-4 py-1.5 rounded-full text-xs text-slate-300 flex items-center justify-center gap-3 pointer-events-auto shadow-xl border border-slate-800">
+                    <span><i class="fa-solid fa-mouse text-sky-400"></i> Kéo chuột trái / Vuốt để xoay 3D</span>
+                    <span class="text-slate-700">•</span>
+                    <span><i class="fa-solid fa-arrows-up-down-left-right text-sky-400"></i> Chuột phải để di chuyển</span>
+                    <span class="text-slate-700">•</span>
+                    <span><i class="fa-solid fa-magnifying-glass-plus text-sky-400"></i> Cuộn chuột để Thu/Phóng</span>
+                </div>
+            </div>
+
+        </main>
+
+    </div>
+
+    <!-- ================================================================= -->
+    <!-- THREE.JS 3D ENGINE & MATHEMATICAL LOGIC                           -->
+    <!-- ================================================================= -->
+    <script>
+        /**
+         * 3D VISUALIZATION ENGINE FOR "HAI MẶT PHẲNG SONG SONG - TOÁN 11 KNTT"
+         * HỌC TOÁN CÙNG THẦY TÔN TÚ
+         * Covers:
+         * 1. Định lí 1: Dấu hiệu nhận biết hai mặt phẳng song song
+         * 2. Định lí 2: Tính chất giao tuyến của mặt phẳng (R) cắt hai mặt phẳng song song (P) và (Q)
+         * 3. Định lí Thalès: Ba mặt phẳng đôi một song song chắn trên hai cát tuyến các đoạn thẳng tương ứng tỉ lệ
+         * 4. Vị trí tương đối: Hai mặt phẳng cắt nhau / trùng nhau
+         */
+
+        const state = {
+            mode: 'THEOREM1',   // 'THEOREM1', 'THEOREM2', 'THALES', 'INTERSECT'
+            height: 3.6,        // Distance h between (P) and (Q)
+            tilt: 0,            // Tilt angle θ of Plane (P) relative to horizontal Plane (Q)
+            param3: 65,         // Contextual parameter:
+                                // - THEOREM1: angle between lines a and b in (P) [20..155 deg]
+                                // - THEOREM2: inclination angle α of cutting plane (R) [30..150 deg]
+                                // - THALES: position ratio t of middle plane (Q) between (R) and (P) [20..80 %]
+                                // - INTERSECT: yaw rotation of intersection line c [0..180 deg]
+            showDist: true,     // Show dashed distance indicator
+            autoRotate: false
+        };
+
+        // Three.js Globals
+        let scene, camera, renderer, controls;
+        let planeQMesh, planeQGrid, planeQBorder;   // Bottom reference plane (Q) at y = 0
+        let planePMesh, planePGrid, planePBorder;   // Top plane (P)
+        let planeRMesh, planeRBorder;               // Cutting plane (R) for Theorem 2 OR Bottom plane (R) for Thales
+        let lineAMesh, lineBMesh, lineCMesh;        // Primary lines a, b, c
+        let lineAPrimeMesh, lineBPrimeMesh;         // Parallel projections in (Q) for Theorem 1
+        let pointMMesh, pointMRingMesh;             // Intersection point M = a ∩ b in (P)
+        let distLineMesh;                           // Dashed vertical distance line
+        let thalesSpheres = [];                     // 6 spheres A, B, C, A', B', C' for Thales
+        let tempVec;
+
+        // Dynamic Label Anchors
+        const labelAnchors = {
+            planeQ: new THREE.Vector3(-6.5, 0.1, -4.8),
+            planeP: new THREE.Vector3(-6.5, 3.7, -4.8),
+            planeR: new THREE.Vector3(5.0, 2.0, 4.0),
+            lineA: new THREE.Vector3(2.5, 3.8, 1.5),
+            lineB: new THREE.Vector3(-2.5, 3.8, 1.5),
+            lineC: new THREE.Vector3(0, 0.3, 0),
+            pointM: new THREE.Vector3(0, 3.8, 0),
+            thalesPts: [
+                new THREE.Vector3(), new THREE.Vector3(), new THREE.Vector3(),
+                new THREE.Vector3(), new THREE.Vector3(), new THREE.Vector3()
+            ]
+        };
+
+        const container = document.getElementById('canvas-container');
+
+        const themeColors = {
+            bg: 0x090d16,
+            planeQ: 0x0284c7,       // Sky Blue for Plane (Q)
+            planeQBorder: 0x38bdf8,
+            planeP: 0x8b5cf6,       // Purple for Plane (P)
+            planePBorder: 0xc084fc,
+            planeR: 0x14b8a6,       // Teal for Plane (R)
+            planeRBorder: 0x5eead4,
+            lineA: 0xef4444,        // Red for Line a
+            lineB: 0x10b981,        // Emerald for Line b
+            lineC: 0xf59e0b,        // Amber for Intersection c
+            pointM: 0xf59e0b,
+            dist: 0x06b6d4
+        };
+
+        function safeRenderKaTeX(latex, elementId, options = {}) {
+            const el = document.getElementById(elementId);
+            if (!el) return;
+            try {
+                if (typeof katex !== 'undefined') {
+                    katex.render(latex, el, { throwOnError: false, ...options });
+                } else {
+                    el.innerText = latex;
+                }
+            } catch (err) {
+                el.innerText = latex;
+            }
+        }
+
+        function renderMixedMath(content, elementId) {
+            const el = document.getElementById(elementId);
+            if (!el) return;
+            el.innerHTML = content;
+            if (typeof renderMathInElement === 'function') {
+                try {
+                    renderMathInElement(el, {
+                        delimiters: [
+                            {left: '$$', right: '$$', display: true},
+                            {left: '$', right: '$', display: false}
+                        ],
+                        throwOnError: false
+                    });
+                } catch (e) {}
+            }
+        }
+
+        function init3D() {
+            if (typeof THREE === 'undefined') return;
+            tempVec = new THREE.Vector3();
+
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(themeColors.bg);
+
+            camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
+            camera.position.set(14, 11, 16);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: "high-performance" });
+            renderer.setSize(container.clientWidth, container.clientHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            container.appendChild(renderer.domElement);
+
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+            controls.target.set(0, 1.8, 0);
+            controls.maxPolarAngle = Math.PI / 2 + 0.25;
+
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
+            scene.add(ambientLight);
+
+            const dirLight = new THREE.DirectionalLight(0xffffff, 0.85);
+            dirLight.position.set(15, 25, 15);
+            scene.add(dirLight);
+
+            const fillLight = new THREE.DirectionalLight(0x38bdf8, 0.35);
+            fillLight.position.set(-12, -8, -12);
+            scene.add(fillLight);
+
+            createPlanes();
+            createLinesAndPoints();
+
+            updateGeometry();
+            window.addEventListener('resize', onWindowResize);
+        }
+
+        function createPlaneObject(w, d, color, borderColor, opacity, renderOrder) {
+            const group = new THREE.Group();
+            const geo = new THREE.PlaneGeometry(w, d);
+            const mat = new THREE.MeshPhysicalMaterial({
+                color: color,
+                transparent: true,
+                opacity: opacity,
+                depthWrite: false,
+                roughness: 0.15,
+                metalness: 0.1,
+                side: THREE.DoubleSide
+            });
+            const mesh = new THREE.Mesh(geo, mat);
+            mesh.renderOrder = renderOrder;
+            group.add(mesh);
+
+            const borderGeo = new THREE.EdgesGeometry(geo);
+            const borderMat = new THREE.LineBasicMaterial({ color: borderColor, linewidth: 2 });
+            const border = new THREE.LineSegments(borderGeo, borderMat);
+            border.renderOrder = renderOrder + 1;
+            group.add(border);
+
+            return { group, mesh, border };
+        }
+
+        function createPlanes() {
+            // 1. Bottom Plane (Q) at y = 0
+            const objQ = createPlaneObject(15, 11, themeColors.planeQ, themeColors.planeQBorder, 0.28, 1);
+            objQ.mesh.rotation.x = -Math.PI / 2;
+            objQ.border.rotation.x = -Math.PI / 2;
+            planeQMesh = objQ.mesh;
+            planeQBorder = objQ.border;
+
+            planeQGrid = new THREE.GridHelper(15, 15, 0x0ea5e9, 0x1e293b);
+            planeQGrid.position.y = 0.004;
+            objQ.group.add(planeQGrid);
+            scene.add(objQ.group);
+
+            // 2. Top Plane (P)
+            const objP = createPlaneObject(15, 11, themeColors.planeP, themeColors.planePBorder, 0.30, 3);
+            objP.mesh.rotation.x = -Math.PI / 2;
+            objP.border.rotation.x = -Math.PI / 2;
+            planePMesh = objP.mesh;
+            planePBorder = objP.border;
+
+            planePGrid = new THREE.GridHelper(15, 15, 0xa855f7, 0x2e1065);
+            planePGrid.position.y = 0.004;
+            objP.group.add(planePGrid);
+
+            const planePContainer = new THREE.Group();
+            planePContainer.add(objP.group);
+            planePContainer.name = 'planePContainer';
+            scene.add(planePContainer);
+
+            // 3. Auxiliary Plane (R) - unit 1x1 scaled dynamically
+            const objR = createPlaneObject(1, 1, themeColors.planeR, themeColors.planeRBorder, 0.28, 2);
+            planeRMesh = objR.mesh;
+            planeRBorder = objR.border;
+            scene.add(objR.group);
+        }
+
+        function createCylinderMesh(color, radius = 0.07) {
+            const geo = new THREE.CylinderGeometry(radius, radius, 1, 16);
+            const mat = new THREE.MeshStandardMaterial({
+                color: color,
+                roughness: 0.2,
+                metalness: 0.7,
+                emissive: color,
+                emissiveIntensity: 0.4
+            });
+            const mesh = new THREE.Mesh(geo, mat);
+            mesh.renderOrder = 6;
+            scene.add(mesh);
+            return mesh;
+        }
+
+        function createLinesAndPoints() {
+            lineAMesh = createCylinderMesh(themeColors.lineA, 0.075);
+            lineBMesh = createCylinderMesh(themeColors.lineB, 0.075);
+            lineCMesh = createCylinderMesh(themeColors.lineC, 0.08);
+
+            // Dashed parallel projections in (Q) for Theorem 1
+            const dashMatA = new THREE.LineDashedMaterial({ color: themeColors.lineA, dashSize: 0.35, gapSize: 0.25 });
+            lineAPrimeMesh = new THREE.LineSegments(new THREE.BufferGeometry(), dashMatA);
+            lineAPrimeMesh.renderOrder = 5;
+            scene.add(lineAPrimeMesh);
+
+            const dashMatB = new THREE.LineDashedMaterial({ color: themeColors.lineB, dashSize: 0.35, gapSize: 0.25 });
+            lineBPrimeMesh = new THREE.LineSegments(new THREE.BufferGeometry(), dashMatB);
+            lineBPrimeMesh.renderOrder = 5;
+            scene.add(lineBPrimeMesh);
+
+            // Point M = a ∩ b in (P)
+            const mGeo = new THREE.SphereGeometry(0.2, 28, 28);
+            const mMat = new THREE.MeshStandardMaterial({
+                color: themeColors.pointM,
+                emissive: themeColors.pointM,
+                emissiveIntensity: 0.8
+            });
+            pointMMesh = new THREE.Mesh(mGeo, mMat);
+            pointMMesh.renderOrder = 7;
+            scene.add(pointMMesh);
+
+            const ringGeo = new THREE.RingGeometry(0.28, 0.42, 32);
+            const ringMat = new THREE.MeshBasicMaterial({ color: themeColors.pointM, side: THREE.DoubleSide, transparent: true, opacity: 0.8 });
+            pointMRingMesh = new THREE.Mesh(ringGeo, ringMat);
+            pointMRingMesh.renderOrder = 7;
+            scene.add(pointMRingMesh);
+
+            // Vertical distance dashed line
+            const distMat = new THREE.LineDashedMaterial({ color: themeColors.dist, dashSize: 0.25, gapSize: 0.2 });
+            distLineMesh = new THREE.LineSegments(new THREE.BufferGeometry(), distMat);
+            distLineMesh.renderOrder = 5;
+            scene.add(distLineMesh);
+
+            // 6 Spheres for Thales Theorem (A, B, C on red transversal d; A', B', C' on green transversal d')
+            for (let i = 0; i < 6; i++) {
+                const col = i < 3 ? themeColors.lineA : themeColors.lineB;
+                const sGeo = new THREE.SphereGeometry(0.18, 24, 24);
+                const sMat = new THREE.MeshStandardMaterial({ color: col, emissive: col, emissiveIntensity: 0.7 });
+                const sphere = new THREE.Mesh(sGeo, sMat);
+                sphere.renderOrder = 8;
+                scene.add(sphere);
+                thalesSpheres.push(sphere);
+            }
+        }
+
+        function alignCylinder(mesh, p1, p2, radius = 0.075) {
+            const dir = new THREE.Vector3().subVectors(p2, p1);
+            const len = dir.length();
+            if (len < 1e-4) {
+                mesh.visible = false;
+                return;
+            }
+            mesh.scale.set(radius / 0.075, len, radius / 0.075);
+            mesh.position.copy(p1).add(p2).multiplyScalar(0.5);
+            mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir.clone().normalize());
+        }
+
+        function updateDashedSegments(lineSegmentsObj, coordsArray) {
+            lineSegmentsObj.geometry.dispose();
+            lineSegmentsObj.geometry = new THREE.BufferGeometry();
+            lineSegmentsObj.geometry.setAttribute('position', new THREE.Float32BufferAttribute(coordsArray, 3));
+            lineSegmentsObj.computeLineDistances();
+        }
+
+        // --- CORE GEOMETRY UPDATE FOR ALL 4 SGK MODES ---
+        function updateGeometry() {
+            const h = parseFloat(state.height);
+            const tiltRad = (parseFloat(state.tilt) * Math.PI) / 180;
+            const p3 = parseFloat(state.param3);
+
+            const planePContainer = scene.getObjectByName('planePContainer');
+
+            // Reset visibility of optional elements
+            planeRMesh.visible = false;
+            planeRBorder.visible = false;
+            lineAMesh.visible = false;
+            lineBMesh.visible = false;
+            lineCMesh.visible = false;
+            lineAPrimeMesh.visible = false;
+            lineBPrimeMesh.visible = false;
+            pointMMesh.visible = false;
+            pointMRingMesh.visible = false;
+            distLineMesh.visible = false;
+            thalesSpheres.forEach(s => s.visible = false);
+
+            // Reset Plane (Q) default position at y = 0
+            planeQMesh.parent.position.set(0, 0, 0);
+            planeQMesh.parent.rotation.set(0, 0, 0);
+
+            if (state.mode === 'THEOREM1') {
+                // =========================================================
+                // MODE 1: ĐỊNH LÍ 1 (DẤU HIỆU NHẬN BIẾT HAI MẶT PHẲNG SONG SONG)
+                // =========================================================
+                planePContainer.position.set(0, h, 0);
+                planePContainer.rotation.set(0, 0, tiltRad);
+
+                const angleRad = (p3 * Math.PI) / 180;
+                const halfAngle = angleRad / 2;
+
+                // Point M = a ∩ b at center of (P)
+                const ptM = new THREE.Vector3(0, h, 0);
+                pointMMesh.position.copy(ptM);
+                pointMMesh.visible = true;
+
+                pointMRingMesh.position.copy(ptM).add(new THREE.Vector3(-Math.sin(tiltRad) * 0.02, Math.cos(tiltRad) * 0.02, 0));
+                pointMRingMesh.rotation.set(-Math.PI / 2, 0, tiltRad);
+                pointMRingMesh.visible = true;
+
+                // Local directions of a and b inside Plane (P)
+                const localDirA = new THREE.Vector3(Math.cos(halfAngle), 0, Math.sin(halfAngle));
+                const localDirB = new THREE.Vector3(Math.cos(-halfAngle), 0, Math.sin(-halfAngle));
+
+                const rotMatP = new THREE.Matrix4().makeRotationZ(tiltRad);
+                const dirA = localDirA.clone().applyMatrix4(rotMatP).normalize();
+                const dirB = localDirB.clone().applyMatrix4(rotMatP).normalize();
+
+                const len = 5.2;
+                const a1 = ptM.clone().addScaledVector(dirA, -len);
+                const a2 = ptM.clone().addScaledVector(dirA, len);
+                const b1 = ptM.clone().addScaledVector(dirB, -len);
+                const b2 = ptM.clone().addScaledVector(dirB, len);
+
+                lineAMesh.visible = true;
+                lineBMesh.visible = true;
+                alignCylinder(lineAMesh, a1, a2, 0.075);
+                alignCylinder(lineBMesh, b1, b2, 0.075);
+
+                // Show parallel lines a' and b' in (Q) when h > 0.2
+                if (h > 0.2) {
+                    const ap1 = new THREE.Vector3(a1.x, 0.02, a1.z);
+                    const ap2 = new THREE.Vector3(a2.x, 0.02, a2.z);
+                    const bp1 = new THREE.Vector3(b1.x, 0.02, b1.z);
+                    const bp2 = new THREE.Vector3(b2.x, 0.02, b2.z);
+                    updateDashedSegments(lineAPrimeMesh, [ap1.x, ap1.y, ap1.z, ap2.x, ap2.y, ap2.z]);
+                    updateDashedSegments(lineBPrimeMesh, [bp1.x, bp1.y, bp1.z, bp2.x, bp2.y, bp2.z]);
+                    lineAPrimeMesh.visible = true;
+                    lineBPrimeMesh.visible = true;
+                }
+
+                // Vertical distance dashed line
+                if (state.showDist && h > 0.2) {
+                    updateDashedSegments(distLineMesh, [0, 0, 0, 0, h, 0]);
+                    distLineMesh.visible = true;
+                }
+
+                // Anchors
+                labelAnchors.planeQ.set(-6.5, 0.15, -4.6);
+                labelAnchors.planeP.set(-6.5 * Math.cos(tiltRad), h - 6.5 * Math.sin(tiltRad) + 0.2, -4.6);
+                labelAnchors.lineA.copy(ptM).addScaledVector(dirA, 3.6).add(new THREE.Vector3(0, 0.35, 0));
+                labelAnchors.lineB.copy(ptM).addScaledVector(dirB, 3.6).add(new THREE.Vector3(0, 0.35, 0));
+                labelAnchors.pointM.copy(ptM).add(new THREE.Vector3(0, 0.45, 0));
+            }
+            else if (state.mode === 'THEOREM2') {
+                // =========================================================
+                // MODE 2: ĐỊNH LÍ 2 (MẶT PHẲNG (R) CẮT HAI MẶT PHẲNG SONG SONG (P) & (Q))
+                // =========================================================
+                const safeH = Math.max(1.2, h);
+                planePContainer.position.set(0, safeH, 0);
+                planePContainer.rotation.set(0, 0, 0);
+
+                // Cutting plane (R) inclined at angle alpha = p3 degrees, cutting (P) along a and (Q) along b
+                const alphaRad = (p3 * Math.PI) / 180;
+                const yawR = (25 * Math.PI) / 180;
+
+                // Direction of both intersection lines a and b (parallel to each other)
+                const dirLine = new THREE.Vector3(Math.cos(yawR), 0, Math.sin(yawR)).normalize();
+                const perpHoriz = new THREE.Vector3(-Math.sin(yawR), 0, Math.cos(yawR)).normalize();
+
+                // Center of Plane (R) at y = safeH / 2
+                const centerR = new THREE.Vector3(0, safeH / 2, 0);
+
+                // In-plane second axis e2 of Plane (R) tilted by alphaRad
+                const e2 = new THREE.Vector3()
+                    .addScaledVector(perpHoriz, Math.cos(alphaRad))
+                    .addScaledVector(new THREE.Vector3(0, 1, 0), Math.sin(alphaRad))
+                    .normalize();
+                const normalR = new THREE.Vector3().crossVectors(dirLine, e2).normalize();
+
+                // Intersection line a = (R) ∩ (P) at y = safeH
+                const offsetTop = (safeH / 2) / Math.tan(alphaRad);
+                const centerA = new THREE.Vector3(0, safeH, 0).addScaledVector(perpHoriz, offsetTop);
+                const a1 = centerA.clone().addScaledVector(dirLine, -5.5);
+                const a2 = centerA.clone().addScaledVector(dirLine, 5.5);
+                lineAMesh.visible = true;
+                alignCylinder(lineAMesh, a1, a2, 0.08);
+
+                // Intersection line b = (R) ∩ (Q) at y = 0
+                const offsetBot = -(safeH / 2) / Math.tan(alphaRad);
+                const centerB = new THREE.Vector3(0, 0.02, 0).addScaledVector(perpHoriz, offsetBot);
+                const b1 = centerB.clone().addScaledVector(dirLine, -5.5);
+                const b2 = centerB.clone().addScaledVector(dirLine, 5.5);
+                lineBMesh.visible = true;
+                alignCylinder(lineBMesh, b1, b2, 0.08);
+
+                // Dynamically size Plane (R) so it cleanly extends past both (P) and (Q)
+                const spanV = (safeH / Math.sin(alphaRad)) + 3.2;
+                const spanU = 13.0;
+                const rotMatR = new THREE.Matrix4().makeBasis(dirLine, e2, normalR);
+                planeRMesh.position.copy(centerR);
+                planeRBorder.position.copy(centerR);
+                planeRMesh.quaternion.setFromRotationMatrix(rotMatR);
+                planeRBorder.quaternion.setFromRotationMatrix(rotMatR);
+                planeRMesh.scale.set(spanU, spanV, 1);
+                planeRBorder.scale.set(spanU, spanV, 1);
+                planeRMesh.visible = true;
+                planeRBorder.visible = true;
+
+                if (state.showDist) {
+                    updateDashedSegments(distLineMesh, [-4.5, 0, -3.5, -4.5, safeH, -3.5]);
+                    distLineMesh.visible = true;
+                }
+
+                // Anchors
+                labelAnchors.planeQ.set(-6.5, 0.15, -4.6);
+                labelAnchors.planeP.set(-6.5, safeH + 0.15, -4.6);
+                labelAnchors.planeR.copy(centerR).addScaledVector(e2, spanV * 0.44).addScaledVector(dirLine, -3.2);
+                labelAnchors.lineA.copy(centerA).addScaledVector(dirLine, 2.2).add(new THREE.Vector3(0, 0.35, 0));
+                labelAnchors.lineB.copy(centerB).addScaledVector(dirLine, 2.2).add(new THREE.Vector3(0, 0.35, 0));
+            }
+            else if (state.mode === 'THALES') {
+                // =========================================================
+                // MODE 3: ĐỊNH LÍ THALÈS TRONG KHÔNG GIAN (3 MẶT PHẲNG SONG SONG)
+                // (P) ở trên (y = H_total), (Q) ở giữa (y = yQ), (R) ở dưới (y = 0)
+                // =========================================================
+                const H_total = Math.max(2.4, h + 1.2);
+                const ratio = p3 / 100; // 0.20 to 0.80
+                const yQ = H_total * ratio;
+
+                // Bottom plane (R) at y = 0 (reuse planeRMesh horizontally)
+                planeRMesh.position.set(0, 0, 0);
+                planeRBorder.position.set(0, 0.005, 0);
+                planeRMesh.rotation.set(-Math.PI / 2, 0, 0);
+                planeRBorder.rotation.set(-Math.PI / 2, 0, 0);
+                planeRMesh.scale.set(15, 11, 1);
+                planeRBorder.scale.set(15, 11, 1);
+                planeRMesh.visible = true;
+                planeRBorder.visible = true;
+
+                // Middle plane (Q) at y = yQ
+                planeQMesh.parent.position.set(0, yQ, 0);
+
+                // Top plane (P) at y = H_total
+                planePContainer.position.set(0, H_total, 0);
+                planePContainer.rotation.set(0, 0, 0);
+
+                // Transversal 1 (d - red): passes through A in (P), B in (Q), C in (R)
+                const ptA = new THREE.Vector3(-3.2, H_total, -1.6);
+                const ptC = new THREE.Vector3(-1.4, 0, 2.2);
+                const ptB = new THREE.Vector3().lerpVectors(ptC, ptA, ratio);
+
+                const dirD1 = new THREE.Vector3().subVectors(ptA, ptC).normalize();
+                lineAMesh.visible = true;
+                alignCylinder(lineAMesh, ptC.clone().addScaledVector(dirD1, -1.2), ptA.clone().addScaledVector(dirD1, 1.2), 0.07);
+
+                // Transversal 2 (d' - emerald): skew to d, passes through A' in (P), B' in (Q), C' in (R)
+                const ptAp = new THREE.Vector3(2.8, H_total, 1.8);
+                const ptCp = new THREE.Vector3(1.5, 0, -2.1);
+                const ptBp = new THREE.Vector3().lerpVectors(ptCp, ptAp, ratio);
+
+                const dirD2 = new THREE.Vector3().subVectors(ptAp, ptCp).normalize();
+                lineBMesh.visible = true;
+                alignCylinder(lineBMesh, ptCp.clone().addScaledVector(dirD2, -1.2), ptAp.clone().addScaledVector(dirD2, 1.2), 0.07);
+
+                // Position the 6 intersection spheres
+                const pts = [ptA, ptB, ptC, ptAp, ptBp, ptCp];
+                pts.forEach((p, idx) => {
+                    thalesSpheres[idx].position.copy(p);
+                    thalesSpheres[idx].visible = true;
+                    labelAnchors.thalesPts[idx].copy(p).add(new THREE.Vector3(idx < 3 ? -0.45 : 0.45, 0.25, 0));
+                });
+
+                if (state.showDist) {
+                    updateDashedSegments(distLineMesh, [-6.0, 0, -4.2, -6.0, H_total, -4.2]);
+                    distLineMesh.visible = true;
+                }
+
+                // Anchors
+                labelAnchors.planeP.set(-6.5, H_total + 0.15, -4.6);
+                labelAnchors.planeQ.set(-6.5, yQ + 0.15, -4.6);
+                labelAnchors.planeR.set(-6.5, 0.15, -4.6);
+                labelAnchors.lineA.copy(ptA).addScaledVector(dirD1, 0.9).add(new THREE.Vector3(-0.35, 0.2, 0));
+                labelAnchors.lineB.copy(ptAp).addScaledVector(dirD2, 0.9).add(new THREE.Vector3(0.35, 0.2, 0));
+            }
+            else if (state.mode === 'INTERSECT') {
+                // =========================================================
+                // MODE 4: HAI MẶT PHẲNG CẮT NHAU (P) ∩ (Q) = c
+                // =========================================================
+                const yawC = (p3 * Math.PI) / 180;
+                const tiltP = Math.abs(tiltRad) < 0.08 ? (28 * Math.PI) / 180 : tiltRad;
+
+                // Plane (P) rotates around the line passing through (0, h, 0) along direction dirC
+                const dirC = new THREE.Vector3(Math.cos(yawC), 0, Math.sin(yawC)).normalize();
+                const perpC = new THREE.Vector3(-Math.sin(yawC), 0, Math.cos(yawC)).normalize();
+
+                const e2P = new THREE.Vector3()
+                    .addScaledVector(perpC, Math.cos(tiltP))
+                    .addScaledVector(new THREE.Vector3(0, 1, 0), Math.sin(tiltP))
+                    .normalize();
+                const normalP = new THREE.Vector3().crossVectors(e2P, dirC).normalize();
+
+                const rotMatP = new THREE.Matrix4().makeBasis(dirC, normalP, e2P);
+                planePContainer.position.set(0, h, 0);
+                planePContainer.quaternion.setFromRotationMatrix(rotMatP);
+
+                // Intersection line c = (P) ∩ (Q) in y = 0:
+                // Points on (P): X = (0, h, 0) + u * dirC + v * e2P. Setting y = 0 => v * sin(tiltP) = -h => v = -h / sin(tiltP)
+                const vInt = -h / Math.sin(tiltP);
+                const centerC = new THREE.Vector3(0, 0.02, 0).addScaledVector(perpC, vInt * Math.cos(tiltP));
+
+                if (Math.abs(vInt) <= 5.2) {
+                    const c1 = centerC.clone().addScaledVector(dirC, -7.2);
+                    const c2 = centerC.clone().addScaledVector(dirC, 7.2);
+                    lineCMesh.visible = true;
+                    alignCylinder(lineCMesh, c1, c2, 0.085);
+                    labelAnchors.lineC.copy(centerC).add(new THREE.Vector3(0, 0.4, 0));
+                }
+
+                labelAnchors.planeQ.set(-6.5, 0.15, -4.6);
+                labelAnchors.planeP.set(0, h, 0).addScaledVector(e2P, 4.5).addScaledVector(dirC, -4.0);
+            }
+
+            updateUI();
+        }
+
+        function updateUI() {
+            const badge = document.getElementById('info-status-badge');
+            const commonPts = document.getElementById('info-common-points');
+            const cardBorder = document.getElementById('info-card-border');
+            const formulaCaption = document.getElementById('formula-caption');
+            const theoremTitle = document.getElementById('theorem-title');
+            const theoremText = document.getElementById('theorem-text');
+            const realworld = document.getElementById('realworld-note');
+
+            document.querySelectorAll('.mode-btn').forEach(btn => btn.classList.remove('active', 'ring-2', 'ring-sky-400'));
+
+            const ctrlTiltBox = document.getElementById('ctrl-tilt-box');
+            const labelParam3 = document.getElementById('label-param3');
+            const sliderParam3 = document.getElementById('slider-param3');
+            const valParam3 = document.getElementById('val-param3');
+
+            if (state.mode === 'THEOREM1') {
+                document.getElementById('mode-theorem1').classList.add('active');
+                ctrlTiltBox.style.display = 'block';
+                sliderParam3.min = 20; sliderParam3.max = 155;
+                labelParam3.innerHTML = `<i class="fa-solid fa-compass-drafting mr-1"></i> Góc giữa $a$ và $b$ trong $(P)$ ($\\varphi$):`;
+                valParam3.innerText = `${Math.round(state.param3)}°`;
+
+                const isParallel = Math.abs(state.tilt) < 1 && state.height > 0.05;
+                const isCoincident = Math.abs(state.tilt) < 1 && state.height <= 0.05;
+
+                if (isParallel) {
+                    badge.className = "px-2.5 py-1 rounded-full text-[11px] font-black uppercase tracking-wider bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 glow-emerald";
+                    badge.innerHTML = `<i class="fa-solid fa-equals mr-1"></i> (P) // (Q) : SONG SONG`;
+                    commonPts.innerText = "(P) ∩ (Q) = ∅ (0 điểm chung)";
+                    cardBorder.className = "glass-card rounded-xl p-3 flex flex-col gap-2.5 border-l-4 border-emerald-500 shadow-xl mt-auto shrink-0";
+                } else if (isCoincident) {
+                    badge.className = "px-2.5 py-1 rounded-full text-[11px] font-black uppercase tracking-wider bg-purple-500/20 text-purple-400 border border-purple-500/40 glow-purple";
+                    badge.innerHTML = `<i class="fa-solid fa-layer-group mr-1"></i> (P) ≡ (Q) : TRÙNG NHAU`;
+                    commonPts.innerText = "Vô số điểm chung";
+                    cardBorder.className = "glass-card rounded-xl p-3 flex flex-col gap-2.5 border-l-4 border-purple-500 shadow-xl mt-auto shrink-0";
+                } else {
+                    badge.className = "px-2.5 py-1 rounded-full text-[11px] font-black uppercase tracking-wider bg-amber-500/20 text-amber-400 border border-amber-500/40 glow-amber";
+                    badge.innerHTML = `<i class="fa-solid fa-xmark mr-1"></i> (P) CẮT (Q) (θ ≠ 0°)`;
+                    commonPts.innerText = "a, b không song song với (Q)";
+                    cardBorder.className = "glass-card rounded-xl p-3 flex flex-col gap-2.5 border-l-4 border-amber-500 shadow-xl mt-auto shrink-0";
+                }
+
+                formulaCaption.innerText = "Ký hiệu toán học Định lí 1 (Dấu hiệu nhận biết):";
+                safeRenderKaTeX(`\\begin{cases} a \\subset (P), \\; b \\subset (P) \\\\ a \\cap b = \\{M\\} \\\\ a \\parallel (Q), \\; b \\parallel (Q) \\end{cases} \\implies (P) \\parallel (Q)`, 'katex-theorem-formula');
+                theoremTitle.innerHTML = `<i class="fa-solid fa-book-bookmark"></i> ĐỊNH LÍ 1 (SGK TOÁN 11 KNTT):`;
+                theoremText.innerHTML = `"Nếu mặt phẳng <span class="math-font font-bold text-purple-400">(P)</span> chứa hai đường thẳng cắt nhau <span class="math-font font-bold text-red-400">a</span>, <span class="math-font font-bold text-emerald-400">b</span> và <span class="math-font font-bold text-red-400">a</span>, <span class="math-font font-bold text-emerald-400">b</span> cùng song song với mặt phẳng <span class="math-font font-bold text-sky-400">(Q)</span> thì <span class="math-font font-bold text-purple-400">(P)</span> song song với <span class="math-font font-bold text-sky-400">(Q)</span>."`;
+
+                setCondStatus('cond-1', true, '1. a \\subset (P), \\; b \\subset (P)');
+                setCondStatus('cond-2', true, '2. a \\cap b = \\{M\\}');
+                setCondStatus('cond-3', isParallel, '3. a \\parallel (Q), \\; b \\parallel (Q) \\implies (P) \\parallel (Q)');
+                realworld.innerText = "Ví dụ thực tế: Mặt bàn nằm ngang song song với mặt sàn nhờ hai thanh giằng chéo nhau cùng song song với mặt sàn.";
+            }
+            else if (state.mode === 'THEOREM2') {
+                document.getElementById('mode-theorem2').classList.add('active');
+                ctrlTiltBox.style.display = 'none';
+                sliderParam3.min = 30; sliderParam3.max = 150;
+                labelParam3.innerHTML = `<i class="fa-solid fa-rotate-right mr-1"></i> Góc nghiêng mặt phẳng cắt $(R)$ ($\\alpha$):`;
+                valParam3.innerText = `${Math.round(state.param3)}°`;
+
+                badge.className = "px-2.5 py-1 rounded-full text-[11px] font-black uppercase tracking-wider bg-indigo-500/20 text-indigo-400 border border-indigo-500/40";
+                badge.innerHTML = `<i class="fa-solid fa-diagram-project mr-1"></i> ĐỊNH LÍ 2 : a // b`;
+                commonPts.innerText = "(P) // (Q) và (R) cắt (P), (Q)";
+                cardBorder.className = "glass-card rounded-xl p-3 flex flex-col gap-2.5 border-l-4 border-indigo-500 shadow-xl mt-auto shrink-0";
+
+                formulaCaption.innerText = "Ký hiệu toán học Định lí 2 (Tính chất giao tuyến):";
+                safeRenderKaTeX(`\\begin{cases} (P) \\parallel (Q) \\\\ (R) \\cap (P) = a \\\\ (R) \\cap (Q) = b \\end{cases} \\implies a \\parallel b`, 'katex-theorem-formula');
+                theoremTitle.innerHTML = `<i class="fa-solid fa-book-bookmark"></i> ĐỊNH LÍ 2 (SGK TOÁN 11 KNTT):`;
+                theoremText.innerHTML = `"Cho hai mặt phẳng song song <span class="math-font font-bold text-purple-400">(P)</span> và <span class="math-font font-bold text-sky-400">(Q)</span>. Nếu một mặt phẳng <span class="math-font font-bold text-teal-400">(R)</span> cắt mặt phẳng <span class="math-font font-bold text-purple-400">(P)</span> theo giao tuyến <span class="math-font font-bold text-red-400">a</span> thì nó cũng cắt <span class="math-font font-bold text-sky-400">(Q)</span> theo giao tuyến <span class="math-font font-bold text-emerald-400">b</span> và <span class="math-font font-bold text-red-400">a</span> song song với <span class="math-font font-bold text-emerald-400">b</span>."`;
+
+                setCondStatus('cond-1', true, '1. (P) \\parallel (Q)');
+                setCondStatus('cond-2', true, '2. (R) \\cap (P) = a, \\; (R) \\cap (Q) = b');
+                setCondStatus('cond-3', true, '3. \\text{Kết luận: } a \\parallel b');
+                realworld.innerText = "Ví dụ thực tế: Mặt nước trong bể kính hình hộp chữ nhật cắt hai mặt bên đối diện theo hai vạch nước luôn song song với nhau.";
+            }
+            else if (state.mode === 'THALES') {
+                document.getElementById('mode-thales').classList.add('active');
+                ctrlTiltBox.style.display = 'none';
+                sliderParam3.min = 20; sliderParam3.max = 80;
+                const ratioVal = (state.param3 / 100).toFixed(2);
+                const abOverBc = (state.param3 / (100 - state.param3)).toFixed(2);
+                labelParam3.innerHTML = `<i class="fa-solid fa-arrows-up-down mr-1"></i> Tỉ số vị trí mặt phẳng $(Q)$ ($BC/AC$):`;
+                valParam3.innerText = `${ratioVal}`;
+
+                badge.className = "px-2.5 py-1 rounded-full text-[11px] font-black uppercase tracking-wider bg-cyan-500/20 text-cyan-400 border border-cyan-500/40";
+                badge.innerHTML = `<i class="fa-solid fa-ruler-combined mr-1"></i> ĐỊNH LÍ THALÈS`;
+                commonPts.innerText = `AB/BC = A'B'/B'C' = ${abOverBc}`;
+                cardBorder.className = "glass-card rounded-xl p-3 flex flex-col gap-2.5 border-l-4 border-cyan-500 shadow-xl mt-auto shrink-0";
+
+                formulaCaption.innerText = "Hệ quả - Định lí Thalès trong không gian:";
+                safeRenderKaTeX(`(P) \\parallel (Q) \\parallel (R) \\implies \\frac{AB}{A'B'} = \\frac{BC}{B'C'} = \\frac{AC}{A'C'}`, 'katex-theorem-formula');
+                theoremTitle.innerHTML = `<i class="fa-solid fa-book-bookmark"></i> ĐỊNH LÍ THALÈS (SGK TOÁN 11 KNTT):`;
+                theoremText.innerHTML = `"Ba mặt phẳng đôi một song song <span class="math-font font-bold text-purple-400">(P)</span>, <span class="math-font font-bold text-sky-400">(Q)</span>, <span class="math-font font-bold text-teal-400">(R)</span> chắn trên hai cát tuyến bất kì <span class="math-font font-bold text-red-400">d</span> và <span class="math-font font-bold text-emerald-400">d'</span> những đoạn thẳng tương ứng tỉ lệ."`;
+
+                setCondStatus('cond-1', true, '1. (P) \\parallel (Q) \\parallel (R)');
+                setCondStatus('cond-2', true, "2. d \\text{ cắt tại } A,B,C; \\; d' \\text{ cắt tại } A',B',C'");
+                setCondStatus('cond-3', true, `3. \\frac{AB}{BC} = \\frac{A'B'}{B'C'} = ${abOverBc}`);
+                realworld.innerText = "Ứng dụng thực tế: Các bậc thang trên hai thanh vịn chéo nhau chia các thanh vịn thành những đoạn thẳng tương ứng tỉ lệ.";
+            }
+            else if (state.mode === 'INTERSECT') {
+                document.getElementById('mode-intersect').classList.add('active');
+                ctrlTiltBox.style.display = 'block';
+                sliderParam3.min = 0; sliderParam3.max = 180;
+                labelParam3.innerHTML = `<i class="fa-solid fa-compass mr-1"></i> Góc xoay phương giao tuyến $c$ ($\\phi$):`;
+                valParam3.innerText = `${Math.round(state.param3)}°`;
+
+                badge.className = "px-2.5 py-1 rounded-full text-[11px] font-black uppercase tracking-wider bg-amber-500/20 text-amber-400 border border-amber-500/40 glow-amber";
+                badge.innerHTML = `<i class="fa-solid fa-xmark mr-1"></i> (P) ∩ (Q) = c : CẮT NHAU`;
+                commonPts.innerText = "Có vô số điểm chung nằm trên c";
+                cardBorder.className = "glass-card rounded-xl p-3 flex flex-col gap-2.5 border-l-4 border-amber-500 shadow-xl mt-auto shrink-0";
+
+                formulaCaption.innerText = "Vị trí tương đối của hai mặt phẳng phân biệt:";
+                safeRenderKaTeX(`(P) \\neq (Q) \\text{ và } (P) \\cap (Q) \\neq \\emptyset \\implies (P) \\cap (Q) = c`, 'katex-theorem-formula');
+                theoremTitle.innerHTML = `<i class="fa-solid fa-book-bookmark"></i> VỊ TRÍ TƯƠNG ĐỐI HAI MẶT PHẲNG:`;
+                theoremText.innerHTML = `"Hai mặt phẳng phân biệt <span class="math-font font-bold text-purple-400">(P)</span> và <span class="math-font font-bold text-sky-400">(Q)</span> hoặc song song (không có điểm chung) hoặc cắt nhau theo một đường thẳng giao tuyến <span class="math-font font-bold text-amber-400">c</span> duy nhất."`;
+
+                setCondStatus('cond-1', true, '1. (P) \\text{ và } (Q) \\text{ phân biệt}');
+                setCondStatus('cond-2', true, '2. \\text{Có ít nhất một điểm chung}');
+                setCondStatus('cond-3', true, '3. (P) \\cap (Q) = c \\text{ (đường thẳng giao tuyến)}');
+                realworld.innerText = "Ví dụ thực tế: Hai mái nhà dốc gặp nhau tại đường nóc nhà (chính là đường thẳng giao tuyến c).";
+            }
+
+            renderMathInPage();
+        }
+
+        function setCondStatus(elementId, isPass, textLatex) {
+            const el = document.getElementById(elementId);
+            if (!el) return;
+            if (isPass) {
+                el.className = "flex items-center gap-1.5 text-emerald-400 font-medium";
+                el.innerHTML = `<i class="fa-solid fa-check text-[10px]"></i> <span>$${textLatex}$</span>`;
+            } else {
+                el.className = "flex items-center gap-1.5 text-slate-500 line-through";
+                el.innerHTML = `<i class="fa-solid fa-xmark text-[10px]"></i> <span>$${textLatex}$</span>`;
+            }
+        }
+
+        function renderMathInPage() {
+            if (typeof renderMathInElement === 'function') {
+                try {
+                    renderMathInElement(document.body, {
+                        delimiters: [
+                            {left: '$$', right: '$$', display: true},
+                            {left: '$', right: '$', display: false}
+                        ],
+                        throwOnError: false
+                    });
+                } catch (e) {}
+            }
+        }
+
+        // --- 3D LABELS SCREEN PROJECTION ---
+        function updateScreenLabels() {
+            updateSingleLabel('label-planeQ', labelAnchors.planeQ, true);
+            updateSingleLabel('label-planeP', labelAnchors.planeP, true);
+            updateSingleLabel('label-planeR', labelAnchors.planeR, planeRMesh && planeRMesh.visible);
+
+            const labelA = document.getElementById('label-lineA');
+            const labelB = document.getElementById('label-lineB');
+            if (state.mode === 'THALES') {
+                labelA.innerHTML = `<span class="math-font font-bold">d</span>`;
+                labelB.innerHTML = `<span class="math-font font-bold">d'</span>`;
+            } else {
+                labelA.innerHTML = `<span class="math-font font-bold">a</span>`;
+                labelB.innerHTML = `<span class="math-font font-bold">b</span>`;
+            }
+
+            updateSingleLabel('label-lineA', labelAnchors.lineA, lineAMesh && lineAMesh.visible);
+            updateSingleLabel('label-lineB', labelAnchors.lineB, lineBMesh && lineBMesh.visible);
+            updateSingleLabel('label-lineC', labelAnchors.lineC, lineCMesh && lineCMesh.visible);
+            updateSingleLabel('label-pointM', labelAnchors.pointM, pointMMesh && pointMMesh.visible);
+
+            const thalesIds = ['label-thales-A', 'label-thales-B', 'label-thales-C', 'label-thales-Ap', 'label-thales-Bp', 'label-thales-Cp'];
+            thalesIds.forEach((id, idx) => {
+                updateSingleLabel(id, labelAnchors.thalesPts[idx], state.mode === 'THALES');
+            });
+        }
+
+        function updateSingleLabel(elementId, worldPos, isVisible) {
+            const el = document.getElementById(elementId);
+            if (!el || !tempVec) return;
+
+            if (!isVisible) {
+                el.classList.add('hidden');
+                return;
+            }
+            el.classList.remove('hidden');
+
+            tempVec.copy(worldPos);
+            tempVec.project(camera);
+
+            if (tempVec.z > 1) {
+                el.style.opacity = '0';
+                return;
+            }
+
+            const widthHalf = container.clientWidth / 2;
+            const heightHalf = container.clientHeight / 2;
+
+            const x = (tempVec.x * widthHalf) + widthHalf;
+            const y = (-(tempVec.y * heightHalf)) + heightHalf;
+
+            el.style.transform = `translate(-50%, -50%) translate(${x}px, ${y}px)`;
+            el.style.opacity = '1';
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            if (controls) {
+                controls.autoRotate = state.autoRotate;
+                controls.autoRotateSpeed = 1.8;
+                controls.update();
+            }
+
+            if (pointMRingMesh && pointMRingMesh.visible) {
+                const scale = 1 + Math.sin(Date.now() * 0.0035) * 0.15;
+                pointMRingMesh.scale.set(scale, scale, 1);
+            }
+
+            renderer.render(scene, camera);
+            updateScreenLabels();
+        }
+
+        function onWindowResize() {
+            if (!container || !camera || !renderer) return;
+            camera.aspect = container.clientWidth / container.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(container.clientWidth, container.clientHeight);
+        }
+
+        function switchMode(newMode) {
+            state.mode = newMode;
+            if (newMode === 'THEOREM1') {
+                state.height = 3.6;
+                state.tilt = 0;
+                state.param3 = 65;
+            } else if (newMode === 'THEOREM2') {
+                state.height = 3.6;
+                state.tilt = 0;
+                state.param3 = 62;
+            } else if (newMode === 'THALES') {
+                state.height = 3.6;
+                state.tilt = 0;
+                state.param3 = 45;
+            } else if (newMode === 'INTERSECT') {
+                state.height = 1.6;
+                state.tilt = 28;
+                state.param3 = 30;
+            }
+
+            document.getElementById('slider-height').value = state.height;
+            document.getElementById('val-height').innerText = `${parseFloat(state.height).toFixed(1)} m`;
+            document.getElementById('slider-tilt').value = state.tilt;
+            document.getElementById('val-tilt').innerText = `${state.tilt}°`;
+            document.getElementById('slider-param3').value = state.param3;
+
+            updateGeometry();
+        }
+
+        function setupUIEventListeners() {
+            const mobileBtn3D = document.getElementById('mobile-tab-3d');
+            const mobileBtnMath = document.getElementById('mobile-tab-math');
+            const sidebar = document.getElementById('sidebar-panel');
+            const viewport = document.getElementById('viewport-panel');
+
+            if (mobileBtn3D && mobileBtnMath) {
+                mobileBtn3D.addEventListener('click', () => {
+                    mobileBtn3D.className = "px-2.5 py-1 rounded-md bg-amber-400 text-slate-950 font-bold transition";
+                    mobileBtnMath.className = "px-2.5 py-1 rounded-md hover:bg-slate-800 transition";
+                    sidebar.classList.add('hidden');
+                    viewport.classList.remove('hidden');
+                    onWindowResize();
+                });
+
+                mobileBtnMath.addEventListener('click', () => {
+                    mobileBtnMath.className = "px-2.5 py-1 rounded-md bg-amber-400 text-slate-950 font-bold transition";
+                    mobileBtn3D.className = "px-2.5 py-1 rounded-md hover:bg-slate-800 transition";
+                    sidebar.classList.remove('hidden');
+                    viewport.classList.add('hidden');
+                });
+            }
+
+            document.getElementById('mode-theorem1').addEventListener('click', () => switchMode('THEOREM1'));
+            document.getElementById('mode-theorem2').addEventListener('click', () => switchMode('THEOREM2'));
+            document.getElementById('mode-thales').addEventListener('click', () => switchMode('THALES'));
+            document.getElementById('mode-intersect').addEventListener('click', () => switchMode('INTERSECT'));
+            document.getElementById('btn-reset-params').addEventListener('click', () => switchMode(state.mode));
+
+            document.getElementById('slider-height').addEventListener('input', (e) => {
+                state.height = parseFloat(e.target.value);
+                document.getElementById('val-height').innerText = `${state.height.toFixed(1)} m`;
+                updateGeometry();
+            });
+
+            document.getElementById('slider-tilt').addEventListener('input', (e) => {
+                state.tilt = parseFloat(e.target.value);
+                document.getElementById('val-tilt').innerText = `${state.tilt}°`;
+                updateGeometry();
+            });
+
+            document.getElementById('slider-param3').addEventListener('input', (e) => {
+                state.param3 = parseFloat(e.target.value);
+                updateGeometry();
+            });
+
+            document.getElementById('toggle-dist').addEventListener('change', (e) => {
+                state.showDist = e.target.checked;
+                updateGeometry();
+            });
+
+            document.getElementById('toggle-autorotate').addEventListener('change', (e) => {
+                state.autoRotate = e.target.checked;
+            });
+
+            document.getElementById('btn-reset-cam').addEventListener('click', () => {
+                animateCameraTo(new THREE.Vector3(14, 11, 16), new THREE.Vector3(0, 1.8, 0));
+            });
+
+            document.getElementById('btn-fullscreen').addEventListener('click', () => {
+                try {
+                    if (!document.fullscreenElement) {
+                        document.documentElement.requestFullscreen().catch(() => {});
+                    } else {
+                        document.exitFullscreen().catch(() => {});
+                    }
+                } catch (err) {}
+            });
+        }
+
+        function animateCameraTo(targetPos, targetLookAt) {
+            const startPos = camera.position.clone();
+            const startLook = controls.target.clone();
+            const startTime = performance.now();
+            const duration = 600;
+
+            function step(currentTime) {
+                const elapsed = currentTime - startTime;
+                const progress = Math.min(elapsed / duration, 1);
+                const ease = 1 - Math.pow(1 - progress, 3);
+
+                camera.position.lerpVectors(startPos, targetPos, ease);
+                controls.target.lerpVectors(startLook, targetLookAt, ease);
+                controls.update();
+
+                if (progress < 1) requestAnimationFrame(step);
+            }
+            requestAnimationFrame(step);
+        }
+
+        window.onload = function() {
+            init3D();
+            setupUIEventListeners();
+            renderMathInPage();
+            animate();
+        };
+    </script>
+</body>
+</html>
