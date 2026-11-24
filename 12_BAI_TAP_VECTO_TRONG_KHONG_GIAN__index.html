@@ -1,0 +1,1186 @@
+<!DOCTYPE html>
+<html lang="vi" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Học Toán Cùng Thầy Tôn Tú - Bài Tập Véctơ Trong Không Gian (Toán 12)</title>
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0f9ff',
+                            500: '#0284c7',
+                            600: '#0369a1',
+                            700: '#075985',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Fira+Code:wght@400;600&display=swap" rel="stylesheet">
+    
+    <!-- Three.js & OrbitControls -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <!-- KaTeX CDN & Auto-render extension -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js"></script>
+
+    <style>
+        * {
+            touch-action: manipulation;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            user-select: none;
+            overflow: hidden;
+            background-color: #090d16;
+            margin: 0;
+            padding: 0;
+        }
+        /* Custom Scrollbar */
+        .custom-scroll::-webkit-scrollbar {
+            width: 5px;
+        }
+        .custom-scroll::-webkit-scrollbar-track {
+            background: rgba(15, 23, 42, 0.8);
+        }
+        .custom-scroll::-webkit-scrollbar-thumb {
+            background: rgba(51, 65, 85, 0.8);
+            border-radius: 4px;
+        }
+        .custom-scroll::-webkit-scrollbar-thumb:hover {
+            background: rgba(100, 116, 139, 1);
+        }
+        /* 3D Label Overlays */
+        .label-3d {
+            position: absolute;
+            pointer-events: none;
+            transition: opacity 0.15s ease-out;
+            transform: translate(-50%, -50%);
+            white-space: nowrap;
+            font-weight: 700;
+            text-shadow: 0 2px 5px rgba(0, 0, 0, 0.95);
+            z-index: 10;
+        }
+        /* Glassmorphism Effect */
+        .glass-card {
+            background: rgba(15, 23, 42, 0.88);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        /* Glow Effects */
+        .glow-gold {
+            box-shadow: 0 0 15px rgba(245, 158, 11, 0.4);
+        }
+        .glow-cyan {
+            box-shadow: 0 0 15px rgba(6, 182, 212, 0.4);
+        }
+        .glow-emerald {
+            box-shadow: 0 0 15px rgba(16, 185, 129, 0.4);
+        }
+        .glow-purple {
+            box-shadow: 0 0 15px rgba(168, 85, 247, 0.4);
+        }
+        .katex {
+            font-size: 1.02em;
+        }
+        #canvas-container canvas {
+            touch-action: none;
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 h-screen w-screen flex flex-col overflow-hidden">
+
+    <!-- ================================================================= -->
+    <!-- TOP FIXED BRAND HEADER BANNER                                      -->
+    <!-- ================================================================= -->
+    <header class="w-full bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 text-slate-950 font-black py-2.5 px-4 shadow-xl border-b border-amber-300 text-sm md:text-base tracking-wider uppercase flex items-center justify-between z-30 shrink-0">
+        <div class="flex items-center gap-2">
+            <i class="fa-solid fa-graduation-cap text-lg md:text-xl"></i>
+            <span class="font-extrabold tracking-wide">HỌC TOÁN CÙNG THẦY TÔN TÚ</span>
+        </div>
+
+        <div class="hidden md:flex items-center gap-2 text-xs font-extrabold tracking-widest bg-slate-950/15 px-3 py-1 rounded-full">
+            <i class="fa-solid fa-cubes"></i>
+            <span>HÌNH HỌC KHÔNG GIAN 12 • BÀI TẬP VÉCTƠ</span>
+        </div>
+        
+        <!-- Mobile View Switcher Buttons -->
+        <div class="flex md:hidden items-center bg-slate-950/40 rounded-lg p-0.5 text-xs text-white">
+            <button id="mobile-tab-3d" class="px-2.5 py-1 rounded-md bg-amber-400 text-slate-950 font-bold transition">
+                <i class="fa-solid fa-cube mr-1"></i> 3D
+            </button>
+            <button id="mobile-tab-math" class="px-2.5 py-1 rounded-md hover:bg-slate-800 transition">
+                <i class="fa-solid fa-book-open mr-1"></i> Lời giải
+            </button>
+        </div>
+    </header>
+
+    <!-- ================================================================= -->
+    <!-- MAIN CONTENT CONTAINER (SIDEBAR LEFT + 3D VIEWPORT RIGHT)         -->
+    <!-- ================================================================= -->
+    <div class="flex-1 w-full flex flex-col md:flex-row overflow-hidden relative">
+        
+        <!-- SIDEBAR PANEL -->
+        <aside id="sidebar-panel" class="custom-scroll w-full md:w-[420px] lg:w-[450px] shrink-0 h-full flex flex-col bg-slate-900/95 border-r border-slate-800 z-20 shadow-2xl overflow-y-auto p-3.5 gap-3 transition-all duration-300 hidden md:flex">
+            
+            <!-- SIDEBAR TITLE BADGE -->
+            <div class="glass-card p-3 rounded-xl flex items-center gap-3 border border-cyan-500/30 shadow-lg shrink-0">
+                <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-cyan-500 via-blue-600 to-indigo-700 flex items-center justify-center text-white text-lg font-black shadow-md shrink-0">
+                    <i class="fa-solid fa-cube"></i>
+                </div>
+                <div>
+                    <h1 class="font-extrabold text-sm md:text-base leading-tight tracking-wide text-white">
+                        BÀI TẬP VÉCTƠ TRONG KHÔNG GIAN
+                    </h1>
+                    <p class="text-[11px] text-cyan-400 font-medium mt-0.5">
+                        Minh họa 3D trực quan & Lời giải chi tiết từng bước
+                    </p>
+                </div>
+            </div>
+
+            <!-- SECTION 1: CHỌN DẠNG BÀI TẬP MẪU -->
+            <div class="space-y-1.5 shrink-0">
+                <div class="text-[11px] font-bold text-slate-400 uppercase tracking-wider flex items-center justify-between">
+                    <span><i class="fa-solid fa-list-ol text-cyan-400 mr-1"></i> 1. Chọn bài tập SGK & Nâng cao</span>
+                </div>
+
+                <div class="grid grid-cols-1 gap-1.5 text-xs">
+                    <!-- Exercise 1 -->
+                    <button id="ex-btn-0" class="ex-btn p-2.5 rounded-xl border border-cyan-500/50 bg-cyan-950/40 hover:bg-cyan-900/40 text-left transition flex items-center justify-between group active">
+                        <div class="flex items-center gap-2.5">
+                            <div class="w-7 h-7 rounded-lg bg-cyan-500/20 text-cyan-300 flex items-center justify-center font-extrabold shrink-0">1</div>
+                            <div>
+                                <div class="font-bold text-xs text-cyan-300">Bài 1: Hình hộp $ABCD.A'B'C'D'$</div>
+                                <div class="text-[11px] text-slate-300 mt-0.5">Rút gọn $\vec{u} = \vec{AB} + \vec{A'D'} + \vec{CC'}$</div>
+                            </div>
+                        </div>
+                        <i class="fa-solid fa-check text-cyan-400 text-xs opacity-0 group-[.active]:opacity-100"></i>
+                    </button>
+
+                    <!-- Exercise 2 -->
+                    <button id="ex-btn-1" class="ex-btn p-2.5 rounded-xl border border-slate-800 bg-slate-800/40 hover:bg-emerald-950/30 text-left transition flex items-center justify-between group">
+                        <div class="flex items-center gap-2.5">
+                            <div class="w-7 h-7 rounded-lg bg-emerald-500/20 text-emerald-300 flex items-center justify-center font-extrabold shrink-0">2</div>
+                            <div>
+                                <div class="font-bold text-xs text-slate-200 group-[.active]:text-emerald-300">Bài 2: Tứ diện $ABCD$ (Trung điểm $M, N$)</div>
+                                <div class="text-[11px] text-slate-400 mt-0.5">Chứng minh $\vec{AB} + \vec{CD} = 2\vec{MN}$</div>
+                            </div>
+                        </div>
+                        <i class="fa-solid fa-check text-emerald-400 text-xs opacity-0 group-[.active]:opacity-100"></i>
+                    </button>
+
+                    <!-- Exercise 3 -->
+                    <button id="ex-btn-2" class="ex-btn p-2.5 rounded-xl border border-slate-800 bg-slate-800/40 hover:bg-purple-950/30 text-left transition flex items-center justify-between group">
+                        <div class="flex items-center gap-2.5">
+                            <div class="w-7 h-7 rounded-lg bg-purple-500/20 text-purple-300 flex items-center justify-center font-extrabold shrink-0">3</div>
+                            <div>
+                                <div class="font-bold text-xs text-slate-200 group-[.active]:text-purple-300">Bài 3: Hình chóp $S.ABCD$ (Đáy HBH tâm $O$)</div>
+                                <div class="text-[11px] text-slate-400 mt-0.5">Chứng minh $\vec{SA} + \vec{SC} = \vec{SB} + \vec{SD} = 2\vec{SO}$</div>
+                            </div>
+                        </div>
+                        <i class="fa-solid fa-check text-purple-400 text-xs opacity-0 group-[.active]:opacity-100"></i>
+                    </button>
+
+                    <!-- Exercise 4 -->
+                    <button id="ex-btn-3" class="ex-btn p-2.5 rounded-xl border border-slate-800 bg-slate-800/40 hover:bg-rose-950/30 text-left transition flex items-center justify-between group">
+                        <div class="flex items-center gap-2.5">
+                            <div class="w-7 h-7 rounded-lg bg-rose-500/20 text-rose-300 flex items-center justify-center font-extrabold shrink-0">4</div>
+                            <div>
+                                <div class="font-bold text-xs text-slate-200 group-[.active]:text-rose-300">Bài 4: Tứ diện đều $ABCD$ cạnh $a$</div>
+                                <div class="text-[11px] text-slate-400 mt-0.5">Tính $\vec{AB} \cdot \vec{CD}$ và góc $(AB, CD)$</div>
+                            </div>
+                        </div>
+                        <i class="fa-solid fa-check text-rose-400 text-xs opacity-0 group-[.active]:opacity-100"></i>
+                    </button>
+
+                    <!-- Exercise 5 -->
+                    <button id="ex-btn-4" class="ex-btn p-2.5 rounded-xl border border-slate-800 bg-slate-800/40 hover:bg-amber-950/30 text-left transition flex items-center justify-between group">
+                        <div class="flex items-center gap-2.5">
+                            <div class="w-7 h-7 rounded-lg bg-amber-500/20 text-amber-300 flex items-center justify-center font-extrabold shrink-0">5</div>
+                            <div>
+                                <div class="font-bold text-xs text-slate-200 group-[.active]:text-amber-300">Bài 5: Hình lập phương $ABCD.A'B'C'D'$</div>
+                                <div class="text-[11px] text-slate-400 mt-0.5">Tính góc $(\vec{AB'}, \vec{BC'})$ và tích vô hướng</div>
+                            </div>
+                        </div>
+                        <i class="fa-solid fa-check text-amber-400 text-xs opacity-0 group-[.active]:opacity-100"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- SECTION 2: ĐIỀU KHIỂN TỪNG BƯỚC GIẢI -->
+            <div class="bg-slate-950/70 p-2.5 rounded-xl border border-amber-500/30 space-y-2 shrink-0">
+                <div class="flex items-center justify-between">
+                    <span class="text-[11px] font-bold text-amber-400 uppercase tracking-wider">
+                        <i class="fa-solid fa-shoe-prints mr-1"></i> 2. Trình chiếu từng bước giải
+                    </span>
+                    <button id="btn-next-step" class="px-2.5 py-1 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold text-[11px] shadow transition flex items-center gap-1">
+                        <span>Bước tiếp</span>
+                        <i class="fa-solid fa-forward-step"></i>
+                    </button>
+                </div>
+
+                <div class="grid grid-cols-3 gap-1.5 text-xs">
+                    <button id="step-btn-1" class="step-btn py-1.5 px-2 rounded-lg border border-amber-400 bg-amber-500/20 text-amber-300 font-bold text-[11px] transition">
+                        Bước 1: Dựng hình
+                    </button>
+                    <button id="step-btn-2" class="step-btn py-1.5 px-2 rounded-lg border border-slate-800 bg-slate-900 text-slate-400 hover:text-slate-200 font-bold text-[11px] transition">
+                        Bước 2: Biến đổi
+                    </button>
+                    <button id="step-btn-3" class="step-btn py-1.5 px-2 rounded-lg border border-slate-800 bg-slate-900 text-slate-400 hover:text-slate-200 font-bold text-[11px] transition">
+                        Bước 3: Kết quả
+                    </button>
+                </div>
+            </div>
+
+            <!-- SECTION 3: THÔNG SỐ CẠNH a & HIỂN THỊ 3D -->
+            <div class="space-y-2 shrink-0">
+                <div class="bg-slate-950/60 p-2 rounded-xl border border-slate-800 space-y-1">
+                    <div class="flex items-center justify-between text-xs">
+                        <span class="text-slate-300 font-semibold">Độ dài cạnh chuẩn $a$:</span>
+                        <span id="val-a" class="font-mono font-bold text-cyan-300 bg-cyan-500/10 px-2 py-0.5 rounded border border-cyan-500/30">a = 4.0</span>
+                    </div>
+                    <input type="range" id="slider-a" min="2" max="6" step="0.5" value="4.0" class="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-cyan-400">
+                </div>
+
+                <div class="grid grid-cols-2 gap-1.5 text-xs">
+                    <label class="flex items-center gap-1.5 p-1.5 rounded-lg bg-slate-950/40 hover:bg-slate-800 cursor-pointer border border-slate-800">
+                        <input type="checkbox" id="toggle-labels" checked class="w-3.5 h-3.5 accent-cyan-500 rounded">
+                        <span class="text-slate-300 text-[11px]">Tên đỉnh & Véctơ</span>
+                    </label>
+
+                    <label class="flex items-center gap-1.5 p-1.5 rounded-lg bg-slate-950/40 hover:bg-slate-800 cursor-pointer border border-slate-800">
+                        <input type="checkbox" id="toggle-axes" checked class="w-3.5 h-3.5 accent-emerald-500 rounded">
+                        <span class="text-slate-300 text-[11px]">Lưới mặt đáy & Trục</span>
+                    </label>
+
+                    <label class="flex items-center gap-1.5 p-1.5 rounded-lg bg-slate-950/40 hover:bg-slate-800 cursor-pointer border border-slate-800">
+                        <input type="checkbox" id="toggle-helpers" checked class="w-3.5 h-3.5 accent-amber-500 rounded">
+                        <span class="text-slate-300 text-[11px]">Đường phụ & Mặt phẳng</span>
+                    </label>
+
+                    <label class="flex items-center gap-1.5 p-1.5 rounded-lg bg-slate-950/40 hover:bg-slate-800 cursor-pointer border border-slate-800">
+                        <input type="checkbox" id="toggle-autorotate" class="w-3.5 h-3.5 accent-purple-500 rounded">
+                        <span class="text-slate-300 text-[11px]">Tự động xoay 3D</span>
+                    </label>
+                </div>
+            </div>
+
+            <hr class="border-slate-800 shrink-0">
+
+            <!-- SECTION 4: THẺ ĐỀ BÀI & LỜI GIẢI CHI TIẾT (KATEX) -->
+            <div class="glass-card rounded-xl p-3 flex flex-col gap-2.5 border-l-4 border-cyan-500 shadow-xl mt-auto shrink-0" id="solution-card">
+                
+                <!-- Header Badge -->
+                <div class="flex items-center justify-between pb-1.5 border-b border-slate-800">
+                    <span id="sol-badge" class="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 glow-cyan">
+                        BÀI 1: HÌNH HỘP ABCD.A'B'C'D'
+                    </span>
+                    <span id="sol-step-tag" class="text-[10px] font-bold text-amber-400">
+                        Bước 1 / 3
+                    </span>
+                </div>
+
+                <!-- Problem Statement -->
+                <div class="bg-slate-900/80 p-2.5 rounded-lg border border-slate-800 text-xs leading-relaxed space-y-1">
+                    <div class="font-bold text-amber-400 flex items-center gap-1 text-[11px]">
+                        <i class="fa-solid fa-file-lines"></i>
+                        <span>Đề bài:</span>
+                    </div>
+                    <div id="problem-text" class="text-slate-200 text-[11px] leading-relaxed"></div>
+                </div>
+
+                <!-- Step-by-step Mathematical Proof -->
+                <div class="bg-slate-950/80 p-2.5 rounded-lg border border-slate-800 space-y-2 text-xs">
+                    <div class="text-[10px] font-bold text-cyan-400 flex items-center gap-1">
+                        <i class="fa-solid fa-square-root-variable"></i>
+                        <span>Lời giải chi tiết:</span>
+                    </div>
+
+                    <div id="step-1-box" class="p-2 rounded bg-slate-900/70 border border-cyan-500/40 text-[11px] text-slate-200 leading-relaxed transition"></div>
+                    <div id="step-2-box" class="p-2 rounded bg-slate-900/40 border border-slate-800 text-[11px] text-slate-400 leading-relaxed transition"></div>
+                    <div id="step-3-box" class="p-2 rounded bg-slate-900/40 border border-slate-800 text-[11px] text-slate-400 leading-relaxed transition"></div>
+                </div>
+
+                <!-- Final Numeric / Geometric Result -->
+                <div class="bg-slate-950/90 p-2 rounded-lg border border-amber-500/30 text-center">
+                    <div class="text-[10px] text-slate-400 mb-0.5">Kết quả / Đáp số với $a = <span id="inline-a-val">4.0</span>$:</div>
+                    <div id="final-formula" class="py-0.5 text-amber-300 font-bold"></div>
+                </div>
+
+            </div>
+
+        </aside>
+
+        <!-- RIGHT AREA: 3D VIEWPORT CONTAINER -->
+        <main id="viewport-panel" class="flex-1 h-full relative overflow-hidden bg-slate-950">
+
+            <!-- 3D WebGL Canvas -->
+            <div id="canvas-container" class="w-full h-full cursor-grab active:cursor-grabbing"></div>
+
+            <!-- Dynamic 3D Floating Labels Overlay -->
+            <div id="labels-container" class="absolute inset-0 pointer-events-none overflow-hidden z-10"></div>
+
+            <!-- Top Left Floating Step Banner on 3D Canvas -->
+            <div class="absolute top-3 left-3 z-20 pointer-events-none max-w-[70%]">
+                <div class="glass-card px-3 py-1.5 rounded-xl border border-slate-700/80 shadow-lg flex items-center gap-2">
+                    <span id="canvas-step-hint" class="text-xs font-bold text-amber-300">
+                        Bước 1: Dựng hình hộp và xác định 3 véctơ thành phần
+                    </span>
+                </div>
+            </div>
+
+            <!-- Top Right Utility Buttons -->
+            <div class="absolute top-3 right-3 z-20 flex items-center gap-1.5 pointer-events-auto">
+                <button id="btn-reset-cam" class="p-2 rounded-xl glass-card text-slate-300 hover:text-white hover:bg-slate-800 transition text-xs shadow-lg" title="Đặt lại góc nhìn 3D">
+                    <i class="fa-solid fa-camera-rotate mr-1"></i> Góc nhìn 3D
+                </button>
+                <button id="btn-fullscreen" class="p-2 rounded-xl glass-card text-slate-300 hover:text-white hover:bg-slate-800 transition text-xs shadow-lg" title="Toàn màn hình">
+                    <i class="fa-solid fa-expand"></i>
+                </button>
+            </div>
+
+            <!-- Bottom Legend & Controls Instruction Bar -->
+            <div class="absolute bottom-3 left-1/2 -translate-x-1/2 z-20 pointer-events-none w-[94%] md:w-auto">
+                <div class="glass-card px-3.5 py-1.5 rounded-full text-[11px] text-slate-300 flex items-center justify-center gap-3 pointer-events-auto shadow-xl border border-slate-800">
+                    <div class="flex items-center gap-1">
+                        <span class="w-2.5 h-2.5 rounded-full bg-cyan-400 inline-block"></span>
+                        <span class="font-bold text-cyan-300">Véctơ 1</span>
+                    </div>
+                    <div class="flex items-center gap-1">
+                        <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 inline-block"></span>
+                        <span class="font-bold text-emerald-300">Véctơ 2</span>
+                    </div>
+                    <div class="flex items-center gap-1">
+                        <span class="w-2.5 h-2.5 rounded-full bg-amber-400 inline-block"></span>
+                        <span class="font-bold text-amber-300">Véctơ kết quả / Tịnh tiến</span>
+                    </div>
+                    <span class="text-slate-700 hidden sm:inline">|</span>
+                    <span class="hidden sm:inline"><i class="fa-solid fa-hand-pointer text-cyan-400 mr-1"></i> Xoay / Thu phóng 3D</span>
+                </div>
+            </div>
+
+        </main>
+
+    </div>
+
+    <!-- ================================================================= -->
+    <!-- THREE.JS 3D VECTOR EXERCISES ENGINE & STEP-BY-STEP LOGIC          -->
+    <!-- ================================================================= -->
+    <script>
+        /**
+         * 3D VECTOR EXERCISES VISUALIZER - GRADE 12 MATHEMATICS
+         * HỌC TOÁN CÙNG THẦY TÔN TÚ
+         */
+
+        const state = {
+            exIndex: 0,      // 0..4
+            step: 1,         // 1, 2, 3
+            a: 4.0,          // Base edge length a
+            showLabels: true,
+            showAxes: true,
+            showHelpers: true,
+            autoRotate: false
+        };
+
+        // Three.js Scene Globals
+        let scene, camera, renderer, controls;
+        let axesGroup, gridHelper;
+        let solidGroup, vectorGroup, helperGroup;
+        let activeScreenLabels = [];
+        const container = document.getElementById('canvas-container');
+        const labelsContainer = document.getElementById('labels-container');
+
+        const palette = {
+            bg: 0x090d16,
+            solidFill: 0x1e293b,
+            solidEdge: 0x38bdf8,
+            cyan: 0x06b6d4,
+            emerald: 0x10b981,
+            amber: 0xf59e0b,
+            purple: 0xa855f7,
+            rose: 0xf43f5e,
+            white: 0xf8fafc
+        };
+
+        // Convert Math Space (x, y, z) -> Three.js World Space (x, z, -y)
+        function mathTo3D(x, y, z) {
+            return new THREE.Vector3(x, z, -y);
+        }
+
+        // Safe KaTeX Render Helpers
+        function safeRenderKaTeX(latex, elementId) {
+            const el = document.getElementById(elementId);
+            if (!el) return;
+            try {
+                if (typeof katex !== 'undefined') {
+                    katex.render(latex, el, { throwOnError: false });
+                } else {
+                    el.innerText = latex;
+                }
+            } catch (err) {
+                el.innerText = latex;
+            }
+        }
+
+        function renderMixedMath(htmlContent, elementId) {
+            const el = document.getElementById(elementId);
+            if (!el) return;
+            el.innerHTML = htmlContent;
+            if (typeof renderMathInElement === 'function') {
+                try {
+                    renderMathInElement(el, {
+                        delimiters: [
+                            { left: '$$', right: '$$', display: true },
+                            { left: '$', right: '$', display: false }
+                        ],
+                        throwOnError: false
+                    });
+                } catch (e) {}
+            }
+        }
+
+        // =================================================================
+        // 5 CURRICULUM EXERCISES DEFINITIONS
+        // =================================================================
+        const exercises = [
+            // -------------------------------------------------------------
+            // BÀI 1: HÌNH HỘP ABCD.A'B'C'D' - QUY TẮC HÌNH HỘP
+            // -------------------------------------------------------------
+            {
+                badge: "BÀI 1: HÌNH HỘP ABCD.A'B'C'D'",
+                badgeClass: "bg-cyan-500/20 text-cyan-300 border-cyan-500/40 glow-cyan",
+                borderClass: "border-cyan-500",
+                problem: "Cho hình hộp chữ nhật $ABCD.A'B'C'D'$ có $AB = a$, $AD = 0.8a$, $AA' = 0.6a$. Rút gọn tổng véctơ $\\vec{u} = \\vec{AB} + \\vec{A'D'} + \\vec{CC'}$ và tính độ dài $|\\vec{u}|$.",
+                steps: [
+                    "<b>Bước 1 (Dựng hình):</b> Biểu diễn 3 véctơ $\\vec{AB}$ (xanh dương), $\\vec{A'D'}$ (xanh lá) và $\\vec{CC'}$ (tím) trên hình hộp $ABCD.A'B'C'D'$.",
+                    "<b>Bước 2 (Đưa về chung gốc $A$):</b> Vì $ADD'A'$ và $ACC'A'$ là các hình bình hành nên ta có: $\\vec{A'D'} = \\vec{AD}$ và $\\vec{CC'} = \\vec{AA'}$.",
+                    "<b>Bước 3 (Quy tắc hình hộp):</b> $\\vec{u} = \\vec{AB} + \\vec{AD} + \\vec{AA'} = \\vec{AC'}$. Độ dài đường chéo: $|\\vec{AC'}| = \\sqrt{a^2 + (0.8a)^2 + (0.6a)^2} = a\\sqrt{2}$."
+                ],
+                hints: [
+                    "Bước 1: Quan sát 3 véctơ AB, A'D', CC' ở các vị trí khác nhau",
+                    "Bước 2: Thay thế A'D' = AD và CC' = AA' để đưa về chung gốc A",
+                    "Bước 3: Áp dụng quy tắc hình hộp ⇒ Tổng véctơ chính là đường chéo AC'"
+                ],
+                getFinalFormula: (a) => `\\vec{u} = \\vec{AC'}, \\qquad |\\vec{u}| = a\\sqrt{2} = ${(a * Math.SQRT2).toFixed(2)}`,
+                build3D: (a, step) => {
+                    const b = 0.8 * a;
+                    const c = 0.6 * a;
+                    const pts = {
+                        "A":  mathTo3D(0, 0, 0),
+                        "B":  mathTo3D(a, 0, 0),
+                        "C":  mathTo3D(a, b, 0),
+                        "D":  mathTo3D(0, b, 0),
+                        "A'": mathTo3D(0, 0, c),
+                        "B'": mathTo3D(a, 0, c),
+                        "C'": mathTo3D(a, b, c),
+                        "D'": mathTo3D(0, b, c)
+                    };
+
+                    // Edges of box
+                    const edges = [
+                        ["A","B"], ["B","C"], ["C","D"], ["D","A"],
+                        ["A'","B'"], ["B'","C'"], ["C'","D'"], ["D'","A'"],
+                        ["A","A'"], ["B","B'"], ["C","C'"], ["D","D'"]
+                    ];
+                    edges.forEach(([p1, p2]) => addEdgeLine(pts[p1], pts[p2], palette.solidEdge));
+                    addTranslucentBox(a, b, c);
+
+                    Object.keys(pts).forEach(k => addVertexDot(pts[k], k, k === 'A' || k === "C'" ? palette.amber : palette.white));
+
+                    // Step 1 vectors
+                    addArrow(pts["A"], pts["B"], palette.cyan, false, "\\vec{AB}");
+                    addArrow(pts["A'"], pts["D'"], palette.emerald, false, "\\vec{A'D'}");
+                    addArrow(pts["C"], pts["C'"], palette.purple, false, "\\vec{CC'}");
+
+                    // Step 2 translated vectors
+                    if (step >= 2) {
+                        addArrow(pts["A"], pts["D"], palette.emerald, false, "\\vec{AD}");
+                        addArrow(pts["A"], pts["A'"], palette.purple, false, "\\vec{AA'}");
+                    }
+
+                    // Step 3 resultant diagonal AC'
+                    if (step >= 3) {
+                        addArrow(pts["A"], pts["C'"], palette.amber, true, "\\vec{u} = \\vec{AC'}");
+                    }
+
+                    controls.target.set(a / 2, c / 2, -b / 2);
+                }
+            },
+
+            // -------------------------------------------------------------
+            // BÀI 2: TỨ DIỆN ABCD - TRUNG ĐIỂM M, N
+            // -------------------------------------------------------------
+            {
+                badge: "BÀI 2: TỨ DIỆN ABCD (TRUNG ĐIỂM M, N)",
+                badgeClass: "bg-emerald-500/20 text-emerald-300 border-emerald-500/40 glow-emerald",
+                borderClass: "border-emerald-500",
+                problem: "Cho tứ diện $ABCD$ cạnh $a$. Gọi $M, N$ lần lượt là trung điểm của hai cạnh $AC$ và $BD$. Chứng minh đẳng thức véctơ: $\\vec{AB} + \\vec{CD} = 2\\vec{MN}$.",
+                steps: [
+                    "<b>Bước 1 (Dựng hình):</b> Dựng tứ diện $ABCD$, xác định trung điểm $M$ của $AC$ và $N$ của $BD$. Hiển thị $\\vec{AB}$ (xanh dương) và $\\vec{CD}$ (xanh lá).",
+                    "<b>Bước 2 (Chèn điểm $M, N$):</b> Ta có $\\vec{AB} = \\vec{AM} + \\vec{MN} + \\vec{NB}$ và $\\vec{CD} = \\vec{CM} + \\vec{MN} + \\vec{ND}$.",
+                    "<b>Bước 3 (Triệt tiêu trung điểm):</b> Vì $M, N$ là trung điểm $AC, BD$ nên $\\vec{AM} + \\vec{CM} = \\vec{0}$ và $\\vec{NB} + \\vec{ND} = \\vec{0} \\implies \\vec{AB} + \\vec{CD} = 2\\vec{MN}$."
+                ],
+                hints: [
+                    "Bước 1: Xác định trung điểm M của AC, N của BD và 2 véctơ AB, CD",
+                    "Bước 2: Chèn điểm M, N vào AB và CD để xuất hiện véctơ MN",
+                    "Bước 3: Hai cặp véctơ đối AM + CM = 0 và NB + ND = 0 ⇒ AB + CD = 2MN"
+                ],
+                getFinalFormula: (a) => `\\vec{AB} + \\vec{CD} = 2\\vec{MN}, \\qquad |\\vec{MN}| = \\frac{a\\sqrt{2}}{2} = ${(a * Math.SQRT2 / 2).toFixed(2)}`,
+                build3D: (a, step) => {
+                    const pts = {
+                        "B": mathTo3D(0, 0, 0),
+                        "C": mathTo3D(a, 0, 0),
+                        "D": mathTo3D(a * 0.5, a * 0.866, 0),
+                        "A": mathTo3D(a * 0.5, a * 0.289, a * 0.816)
+                    };
+                    pts["M"] = pts["A"].clone().add(pts["C"]).multiplyScalar(0.5);
+                    pts["N"] = pts["B"].clone().add(pts["D"]).multiplyScalar(0.5);
+
+                    const edges = [["A","B"], ["A","C"], ["A","D"], ["B","C"], ["C","D"], ["D","B"]];
+                    edges.forEach(([p1, p2]) => addEdgeLine(pts[p1], pts[p2], palette.solidEdge));
+                    addTranslucentTetra(pts["A"], pts["B"], pts["C"], pts["D"]);
+
+                    ["A","B","C","D"].forEach(k => addVertexDot(pts[k], k, palette.white));
+                    addVertexDot(pts["M"], "M", palette.amber);
+                    addVertexDot(pts["N"], "N", palette.amber);
+
+                    // Step 1: AB and CD
+                    addArrow(pts["A"], pts["B"], palette.cyan, false, "\\vec{AB}");
+                    addArrow(pts["C"], pts["D"], palette.emerald, false, "\\vec{CD}");
+
+                    // Step 2: Midpoint opposite vectors
+                    if (step >= 2) {
+                        addArrow(pts["M"], pts["A"], palette.rose, false, "\\vec{MA}");
+                        addArrow(pts["M"], pts["C"], palette.rose, false, "\\vec{MC}");
+                        addArrow(pts["N"], pts["B"], palette.purple, false, "\\vec{NB}");
+                        addArrow(pts["N"], pts["D"], palette.purple, false, "\\vec{ND}");
+                    }
+
+                    // Step 3: Resultant MN
+                    if (step >= 3) {
+                        addArrow(pts["M"], pts["N"], palette.amber, true, "\\vec{MN}");
+                    }
+
+                    controls.target.set(a * 0.5, a * 0.25, -a * 0.3);
+                }
+            },
+
+            // -------------------------------------------------------------
+            // BÀI 3: HÌNH CHÓP S.ABCD ĐÁY HÌNH BÌNH HÀNH TÂM O
+            // -------------------------------------------------------------
+            {
+                badge: "BÀI 3: HÌNH CHÓP S.ABCD (ĐÁY HBH)",
+                badgeClass: "bg-purple-500/20 text-purple-300 border-purple-500/40 glow-purple",
+                borderClass: "border-purple-500",
+                problem: "Cho hình chóp $S.ABCD$ có đáy $ABCD$ là hình bình hành tâm $O$. Chứng minh rằng: $\\vec{SA} + \\vec{SC} = \\vec{SB} + \\vec{SD} = 2\\vec{SO}$.",
+                steps: [
+                    "<b>Bước 1 (Dựng hình):</b> Dựng hình chóp $S.ABCD$ đáy hình bình hành tâm $O = AC \\cap BD$. Hiển thị 4 véctơ cạnh bên xuất phát từ đỉnh $S$.",
+                    "<b>Bước 2 (Tính chất trung điểm):</b> Vì $O$ là trung điểm $AC$ nên $\\vec{SA} + \\vec{SC} = 2\\vec{SO}$. Tương tự, $O$ là trung điểm $BD$ nên $\\vec{SB} + \\vec{SD} = 2\\vec{SO}$.",
+                    "<b>Bước 3 (Kết luận):</b> Từ hai đẳng thức trên suy ra $\\vec{SA} + \\vec{SC} = \\vec{SB} + \\vec{SD} = 2\\vec{SO}$ (đpcm)."
+                ],
+                hints: [
+                    "Bước 1: Quan sát 4 véctơ cạnh bên SA, SB, SC, SD của hình chóp S.ABCD",
+                    "Bước 2: Áp dụng quy tắc trung điểm O cho tam giác SAC và tam giác SBD",
+                    "Bước 3: Cả hai tổng đều bằng 2 lần véctơ trung tuyến SO"
+                ],
+                getFinalFormula: (a) => `\\vec{SA} + \\vec{SC} = \\vec{SB} + \\vec{SD} = 2\\vec{SO}`,
+                build3D: (a, step) => {
+                    const slant = 0.35 * a;
+                    const b = 0.85 * a;
+                    const h = 1.1 * a;
+
+                    const pts = {
+                        "A": mathTo3D(0, 0, 0),
+                        "B": mathTo3D(a, 0, 0),
+                        "C": mathTo3D(a + slant, b, 0),
+                        "D": mathTo3D(slant, b, 0),
+                        "S": mathTo3D(a * 0.45, b * 0.4, h)
+                    };
+                    pts["O"] = pts["A"].clone().add(pts["C"]).multiplyScalar(0.5);
+
+                    const edges = [["A","B"], ["B","C"], ["C","D"], ["D","A"], ["S","A"], ["S","B"], ["S","C"], ["S","D"]];
+                    edges.forEach(([p1, p2]) => addEdgeLine(pts[p1], pts[p2], palette.solidEdge));
+
+                    // Base diagonals
+                    if (state.showHelpers) {
+                        addDashedLine(pts["A"], pts["C"], 0x94a3b8);
+                        addDashedLine(pts["B"], pts["D"], 0x94a3b8);
+                    }
+
+                    ["A","B","C","D","S"].forEach(k => addVertexDot(pts[k], k, k === 'S' ? palette.amber : palette.white));
+                    addVertexDot(pts["O"], "O", palette.amber);
+
+                    // Step 1: 4 lateral vectors
+                    addArrow(pts["S"], pts["A"], palette.cyan, false, "\\vec{SA}");
+                    addArrow(pts["S"], pts["C"], palette.cyan, false, "\\vec{SC}");
+                    addArrow(pts["S"], pts["B"], palette.emerald, false, "\\vec{SB}");
+                    addArrow(pts["S"], pts["D"], palette.emerald, false, "\\vec{SD}");
+
+                    // Step 2 & 3: Median vector SO
+                    if (step >= 2) {
+                        addArrow(pts["S"], pts["O"], palette.amber, true, "\\vec{SO}");
+                    }
+
+                    controls.target.set((a + slant) / 2, h * 0.35, -b / 2);
+                }
+            },
+
+            // -------------------------------------------------------------
+            // BÀI 4: TỨ DIỆN ĐỀU ABCD CẠNH a - TÍCH VÔ HƯỚNG & VUÔNG GÓC
+            // -------------------------------------------------------------
+            {
+                badge: "BÀI 4: TỨ DIỆN ĐỀU ABCD CẠNH a",
+                badgeClass: "bg-rose-500/20 text-rose-300 border-rose-500/40",
+                borderClass: "border-rose-500",
+                problem: "Cho tứ diện đều $ABCD$ có tất cả các cạnh bằng $a$. Tính tích vô hướng $\\vec{AB} \\cdot \\vec{CD}$ và suy ra góc giữa hai đường thẳng $AB$ và $CD$.",
+                steps: [
+                    "<b>Bước 1 (Dựng hình):</b> Dựng tứ diện đều $ABCD$ cạnh $a$. Hiển thị hai véctơ đối diện $\\vec{AB}$ (xanh dương) và $\\vec{CD}$ (xanh lá).",
+                    "<b>Bước 2 (Phân tích theo quy tắc hiệu):</b> Chèn điểm $A$ vào $\\vec{CD}$: $\\vec{CD} = \\vec{AD} - \\vec{AC} \\implies \\vec{AB} \\cdot \\vec{CD} = \\vec{AB} \\cdot \\vec{AD} - \\vec{AB} \\cdot \\vec{AC}$.",
+                    "<b>Bước 3 (Tính tích vô hướng):</b> Vì các mặt là tam giác đều nên $\\widehat{BAD} = \\widehat{BAC} = 60^\\circ$. Do đó $\\vec{AB} \\cdot \\vec{CD} = a^2\\cos 60^\\circ - a^2\\cos 60^\\circ = 0 \\implies AB \\perp CD$."
+                ],
+                hints: [
+                    "Bước 1: Hai cạnh đối diện AB và CD trong tứ diện đều chéo nhau",
+                    "Bước 2: Phân tích CD = AD - AC để đưa về các góc 60° tại đỉnh A",
+                    "Bước 3: Tích vô hướng bằng 0 ⇒ Hai cạnh đối diện của tứ diện đều vuông góc nhau!"
+                ],
+                getFinalFormula: () => `\\vec{AB} \\cdot \\vec{CD} = 0 \\implies (\\vec{AB}, \\vec{CD}) = 90^\\circ \\quad (AB \\perp CD)`,
+                build3D: (a, step) => {
+                    const pts = {
+                        "B": mathTo3D(0, 0, 0),
+                        "C": mathTo3D(a, 0, 0),
+                        "D": mathTo3D(a * 0.5, a * 0.866, 0),
+                        "A": mathTo3D(a * 0.5, a * 0.289, a * 0.816)
+                    };
+
+                    const edges = [["A","B"], ["A","C"], ["A","D"], ["B","C"], ["C","D"], ["D","B"]];
+                    edges.forEach(([p1, p2]) => addEdgeLine(pts[p1], pts[p2], palette.solidEdge));
+                    addTranslucentTetra(pts["A"], pts["B"], pts["C"], pts["D"]);
+
+                    ["A","B","C","D"].forEach(k => addVertexDot(pts[k], k, palette.white));
+
+                    // Step 1: AB and CD
+                    addArrow(pts["A"], pts["B"], palette.cyan, false, "\\vec{AB}");
+                    addArrow(pts["C"], pts["D"], palette.emerald, false, "\\vec{CD}");
+
+                    // Step 2: Vectors AC and AD from A
+                    if (step >= 2) {
+                        addArrow(pts["A"], pts["C"], palette.purple, false, "\\vec{AC}");
+                        addArrow(pts["A"], pts["D"], palette.amber, false, "\\vec{AD}");
+                    }
+
+                    // Step 3: Perpendicular midpoint line connecting midpoints of AB & CD
+                    if (step >= 3 && state.showHelpers) {
+                        const midAB = pts["A"].clone().add(pts["B"]).multiplyScalar(0.5);
+                        const midCD = pts["C"].clone().add(pts["D"]).multiplyScalar(0.5);
+                        addDashedLine(midAB, midCD, palette.amber);
+                    }
+
+                    controls.target.set(a * 0.5, a * 0.25, -a * 0.3);
+                }
+            },
+
+            // -------------------------------------------------------------
+            // BÀI 5: HÌNH LẬP PHƯƠNG ABCD.A'B'C'D' - GÓC (AB', BC')
+            // -------------------------------------------------------------
+            {
+                badge: "BÀI 5: HÌNH LẬP PHƯƠNG ABCD.A'B'C'D'",
+                badgeClass: "bg-amber-500/20 text-amber-300 border-amber-500/40 glow-gold",
+                borderClass: "border-amber-500",
+                problem: "Cho hình lập phương $ABCD.A'B'C'D'$ cạnh $a$. Tính góc giữa hai véctơ $\\vec{AB'}$ và $\\vec{BC'}$, từ đó tính tích vô hướng $\\vec{AB'} \\cdot \\vec{BC'}$.",
+                steps: [
+                    "<b>Bước 1 (Dựng hình):</b> Dựng hình lập phương $ABCD.A'B'C'D'$ cạnh $a$. Hiển thị hai véctơ đường chéo mặt $\\vec{AB'}$ (xanh dương) và $\\vec{BC'}$ (xanh lá).",
+                    "<b>Bước 2 (Tịnh tiến về chung gốc $A$):</b> Vì $ABC'D'$ là hình bình hành nên $\\vec{BC'} = \\vec{AD'}$. Khi đó $(\\vec{AB'}, \\vec{BC'}) = (\\vec{AB'}, \\vec{AD'}) = \\widehat{B'AD'}$.",
+                    "<b>Bước 3 (Tam giác đều $\\triangle AB'D'$):</b> Ta có $AB' = AD' = B'D' = a\\sqrt{2} \\implies \\triangle AB'D'$ đều $\\implies (\\vec{AB'}, \\vec{BC'}) = 60^\\circ$ và $\\vec{AB'} \\cdot \\vec{BC'} = a^2$."
+                ],
+                hints: [
+                    "Bước 1: Hai đường chéo mặt AB' và BC' chưa chung điểm đầu",
+                    "Bước 2: Tịnh tiến véctơ BC' thành AD' để đưa về chung gốc A",
+                    "Bước 3: Tam giác AB'D' có 3 cạnh đều bằng a√2 nên là tam giác đều ⇒ Góc = 60°"
+                ],
+                getFinalFormula: (a) => `(\\vec{AB'}, \\vec{BC'}) = 60^\\circ, \\qquad \\vec{AB'} \\cdot \\vec{BC'} = a^2 = ${(a * a).toFixed(1)}`,
+                build3D: (a, step) => {
+                    const pts = {
+                        "A":  mathTo3D(0, 0, 0),
+                        "B":  mathTo3D(a, 0, 0),
+                        "C":  mathTo3D(a, a, 0),
+                        "D":  mathTo3D(0, a, 0),
+                        "A'": mathTo3D(0, 0, a),
+                        "B'": mathTo3D(a, 0, a),
+                        "C'": mathTo3D(a, a, a),
+                        "D'": mathTo3D(0, a, a)
+                    };
+
+                    const edges = [
+                        ["A","B"], ["B","C"], ["C","D"], ["D","A"],
+                        ["A'","B'"], ["B'","C'"], ["C'","D'"], ["D'","A'"],
+                        ["A","A'"], ["B","B'"], ["C","C'"], ["D","D'"]
+                    ];
+                    edges.forEach(([p1, p2]) => addEdgeLine(pts[p1], pts[p2], palette.solidEdge));
+                    addTranslucentBox(a, a, a);
+
+                    Object.keys(pts).forEach(k => addVertexDot(pts[k], k, k === 'A' ? palette.amber : palette.white));
+
+                    // Step 1: AB' and BC'
+                    addArrow(pts["A"], pts["B'"], palette.cyan, false, "\\vec{AB'}");
+                    addArrow(pts["B"], pts["C'"], palette.emerald, false, "\\vec{BC'}");
+
+                    // Step 2: Translated vector AD'
+                    if (step >= 2) {
+                        addArrow(pts["A"], pts["D'"], palette.amber, true, "\\vec{AD'} = \\vec{BC'}");
+                    }
+
+                    // Step 3: Equilateral triangle AB'D'
+                    if (step >= 3 && state.showHelpers) {
+                        addDashedLine(pts["B'"], pts["D'"], palette.amber);
+                        addTriangleFill(pts["A"], pts["B'"], pts["D'"], palette.amber);
+                    }
+
+                    controls.target.set(a / 2, a / 2, -a / 2);
+                }
+            }
+        ];
+
+        // =================================================================
+        // THREE.JS INITIALIZATION & PRIMITIVE BUILDERS
+        // =================================================================
+        function init3D() {
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(palette.bg);
+
+            camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
+            camera.position.set(10, 8, 12);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: "high-performance" });
+            renderer.setSize(container.clientWidth, container.clientHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            container.appendChild(renderer.domElement);
+
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+            controls.touches = {
+                ONE: THREE.TOUCH.ROTATE,
+                TWO: THREE.TOUCH.DOLLY_PAN
+            };
+
+            const ambient = new THREE.AmbientLight(0xffffff, 0.8);
+            scene.add(ambient);
+
+            const dirLight = new THREE.DirectionalLight(0xffffff, 0.85);
+            dirLight.position.set(15, 25, 10);
+            scene.add(dirLight);
+
+            const fillLight = new THREE.DirectionalLight(0x38bdf8, 0.4);
+            fillLight.position.set(-10, -10, -10);
+            scene.add(fillLight);
+
+            createAxesAndGrid();
+
+            solidGroup = new THREE.Group();
+            vectorGroup = new THREE.Group();
+            helperGroup = new THREE.Group();
+            scene.add(solidGroup);
+            scene.add(vectorGroup);
+            scene.add(helperGroup);
+
+            updateExerciseScene();
+            window.addEventListener('resize', onWindowResize);
+        }
+
+        function createAxesAndGrid() {
+            axesGroup = new THREE.Group();
+            gridHelper = new THREE.GridHelper(18, 18, 0x334155, 0x1e293b);
+            gridHelper.position.set(2, -0.02, -2);
+            axesGroup.add(gridHelper);
+            scene.add(axesGroup);
+        }
+
+        function addEdgeLine(p1, p2, colorHex) {
+            const geo = new THREE.BufferGeometry().setFromPoints([p1, p2]);
+            const mat = new THREE.LineBasicMaterial({ color: colorHex, transparent: true, opacity: 0.7 });
+            solidGroup.add(new THREE.Line(geo, mat));
+        }
+
+        function addDashedLine(p1, p2, colorHex) {
+            const geo = new THREE.BufferGeometry().setFromPoints([p1, p2]);
+            const mat = new THREE.LineDashedMaterial({ color: colorHex, dashSize: 0.22, gapSize: 0.14 });
+            const line = new THREE.Line(geo, mat);
+            line.computeLineDistances();
+            helperGroup.add(line);
+        }
+
+        function addTranslucentBox(a, b, c) {
+            const geo = new THREE.BoxGeometry(a, c, b);
+            const mat = new THREE.MeshPhysicalMaterial({
+                color: palette.solidFill,
+                transparent: true,
+                opacity: 0.18,
+                roughness: 0.2,
+                side: THREE.DoubleSide
+            });
+            const mesh = new THREE.Mesh(geo, mat);
+            mesh.position.set(a / 2, c / 2, -b / 2);
+            solidGroup.add(mesh);
+        }
+
+        function addTranslucentTetra(pA, pB, pC, pD) {
+            const verts = new Float32Array([
+                pA.x, pA.y, pA.z, pB.x, pB.y, pB.z, pC.x, pC.y, pC.z,
+                pA.x, pA.y, pA.z, pC.x, pC.y, pC.z, pD.x, pD.y, pD.z,
+                pA.x, pA.y, pA.z, pD.x, pD.y, pD.z, pB.x, pB.y, pB.z,
+                pB.x, pB.y, pB.z, pD.x, pD.y, pD.z, pC.x, pC.y, pC.z
+            ]);
+            const geo = new THREE.BufferGeometry();
+            geo.setAttribute('position', new THREE.BufferAttribute(verts, 3));
+            geo.computeVertexNormals();
+            const mat = new THREE.MeshPhysicalMaterial({
+                color: palette.solidFill,
+                transparent: true,
+                opacity: 0.2,
+                side: THREE.DoubleSide
+            });
+            solidGroup.add(new THREE.Mesh(geo, mat));
+        }
+
+        function addTriangleFill(p1, p2, p3, colorHex) {
+            const verts = new Float32Array([
+                p1.x, p1.y, p1.z,
+                p2.x, p2.y, p2.z,
+                p3.x, p3.y, p3.z
+            ]);
+            const geo = new THREE.BufferGeometry();
+            geo.setAttribute('position', new THREE.BufferAttribute(verts, 3));
+            geo.computeVertexNormals();
+            const mat = new THREE.MeshBasicMaterial({
+                color: colorHex,
+                transparent: true,
+                opacity: 0.25,
+                side: THREE.DoubleSide
+            });
+            helperGroup.add(new THREE.Mesh(geo, mat));
+        }
+
+        function addVertexDot(pos3D, labelText, colorHex) {
+            const geo = new THREE.SphereGeometry(0.09, 16, 16);
+            const mat = new THREE.MeshStandardMaterial({
+                color: colorHex,
+                emissive: colorHex,
+                emissiveIntensity: 0.5
+            });
+            const mesh = new THREE.Mesh(geo, mat);
+            mesh.position.copy(pos3D);
+            solidGroup.add(mesh);
+
+            registerScreenLabel(labelText, pos3D.clone().add(new THREE.Vector3(0, 0.22, 0)), 'vertex', colorHex);
+        }
+
+        function addArrow(p1, p2, colorHex, isBold = false, latexLabel = '') {
+            const dir = new THREE.Vector3().subVectors(p2, p1);
+            const len = dir.length();
+            if (len < 0.001) return;
+
+            const headLen = Math.min(isBold ? 0.34 : 0.26, len * 0.35);
+            const headRad = isBold ? 0.09 : 0.065;
+            const shaftRad = isBold ? 0.032 : 0.02;
+            const shaftLen = len - headLen;
+
+            const group = new THREE.Group();
+
+            if (shaftLen > 0) {
+                const sGeo = new THREE.CylinderGeometry(shaftRad, shaftRad, shaftLen, 12);
+                const sMat = new THREE.MeshStandardMaterial({
+                    color: colorHex,
+                    emissive: colorHex,
+                    emissiveIntensity: isBold ? 0.65 : 0.4,
+                    roughness: 0.2
+                });
+                const sMesh = new THREE.Mesh(sGeo, sMat);
+                sMesh.position.set(0, shaftLen / 2, 0);
+                group.add(sMesh);
+            }
+
+            const hGeo = new THREE.ConeGeometry(headRad, headLen, 16);
+            const hMat = new THREE.MeshStandardMaterial({
+                color: colorHex,
+                emissive: colorHex,
+                emissiveIntensity: 0.75
+            });
+            const hMesh = new THREE.Mesh(hGeo, hMat);
+            hMesh.position.set(0, shaftLen + headLen / 2, 0);
+            group.add(hMesh);
+
+            group.position.copy(p1);
+            group.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir.clone().normalize());
+            vectorGroup.add(group);
+
+            if (latexLabel) {
+                const mid = p1.clone().add(p2).multiplyScalar(0.5).add(new THREE.Vector3(0, 0.24, 0));
+                registerScreenLabel(latexLabel, mid, 'vector', colorHex);
+            }
+        }
+
+        // Dynamic HTML Overlay Labels Management
+        function clearScreenLabels() {
+            labelsContainer.innerHTML = '';
+            activeScreenLabels = [];
+        }
+
+        function registerScreenLabel(text, worldPos, type, colorHex) {
+            const el = document.createElement('div');
+            if (type === 'vertex') {
+                el.className = 'label-3d px-1.5 py-0.5 rounded bg-slate-900/90 text-white text-[11px] border border-slate-600 shadow';
+                el.innerText = text;
+            } else {
+                const hexStr = '#' + colorHex.toString(16).padStart(6, '0');
+                el.className = 'label-3d px-2 py-0.5 rounded bg-slate-950/90 text-white text-[11px] border shadow-lg';
+                el.style.borderColor = hexStr;
+                el.style.color = hexStr;
+                try {
+                    if (typeof katex !== 'undefined') {
+                        katex.render(text, el, { throwOnError: false });
+                    } else {
+                        el.innerText = text;
+                    }
+                } catch (e) {
+                    el.innerText = text;
+                }
+            }
+            labelsContainer.appendChild(el);
+            activeScreenLabels.push({ el, worldPos });
+        }
+
+        const projVec = new THREE.Vector3();
+        function updateScreenLabels() {
+            if (!state.showLabels) {
+                labelsContainer.style.display = 'none';
+                return;
+            }
+            labelsContainer.style.display = 'block';
+
+            const halfW = container.clientWidth / 2;
+            const halfH = container.clientHeight / 2;
+
+            for (let i = 0; i < activeScreenLabels.length; i++) {
+                const item = activeScreenLabels[i];
+                projVec.copy(item.worldPos).project(camera);
+                if (projVec.z > 1) {
+                    item.el.style.opacity = '0';
+                } else {
+                    const x = projVec.x * halfW + halfW;
+                    const y = -projVec.y * halfH + halfH;
+                    item.el.style.transform = `translate(-50%, -50%) translate(${x}px, ${y}px)`;
+                    item.el.style.opacity = '1';
+                }
+            }
+        }
+
+        // =================================================================
+        // UPDATE SCENE & UI FOR ACTIVE EXERCISE + STEP
+        // =================================================================
+        function updateExerciseScene() {
+            // Clear 3D groups & labels
+            while (solidGroup.children.length > 0) solidGroup.remove(solidGroup.children[0]);
+            while (vectorGroup.children.length > 0) vectorGroup.remove(vectorGroup.children[0]);
+            while (helperGroup.children.length > 0) helperGroup.remove(helperGroup.children[0]);
+            clearScreenLabels();
+
+            axesGroup.visible = state.showAxes;
+
+            const ex = exercises[state.exIndex];
+            ex.build3D(state.a, state.step);
+
+            // Update Left Sidebar Solution Card
+            const badge = document.getElementById('sol-badge');
+            badge.className = `px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider border ${ex.badgeClass}`;
+            badge.innerText = ex.badge;
+
+            document.getElementById('sol-step-tag').innerText = `Bước ${state.step} / 3`;
+            document.getElementById('solution-card').className = `glass-card rounded-xl p-3 flex flex-col gap-2.5 border-l-4 ${ex.borderClass} shadow-xl mt-auto shrink-0`;
+            document.getElementById('canvas-step-hint').innerText = ex.hints[state.step - 1];
+            document.getElementById('inline-a-val').innerText = state.a.toFixed(1);
+
+            renderMixedMath(ex.problem, 'problem-text');
+            renderMixedMath(ex.steps[0], 'step-1-box');
+            renderMixedMath(ex.steps[1], 'step-2-box');
+            renderMixedMath(ex.steps[2], 'step-3-box');
+            safeRenderKaTeX(ex.getFinalFormula(state.a), 'final-formula');
+
+            // Highlight active step box
+            [1, 2, 3].forEach(s => {
+                const box = document.getElementById(`step-${s}-box`);
+                const btn = document.getElementById(`step-btn-${s}`);
+                if (s === state.step) {
+                    box.className = "p-2 rounded bg-slate-900/90 border border-amber-400/70 text-[11px] text-white leading-relaxed shadow-md transition";
+                    btn.className = "step-btn py-1.5 px-2 rounded-lg border border-amber-400 bg-amber-500/25 text-amber-300 font-bold text-[11px] transition";
+                } else if (s < state.step) {
+                    box.className = "p-2 rounded bg-slate-900/60 border border-emerald-500/30 text-[11px] text-slate-200 leading-relaxed transition";
+                    btn.className = "step-btn py-1.5 px-2 rounded-lg border border-emerald-500/40 bg-emerald-950/30 text-emerald-300 font-bold text-[11px] transition";
+                } else {
+                    box.className = "p-2 rounded bg-slate-950/50 border border-slate-800/80 text-[11px] text-slate-500 leading-relaxed transition";
+                    btn.className = "step-btn py-1.5 px-2 rounded-lg border border-slate-800 bg-slate-900 text-slate-400 hover:text-slate-200 font-bold text-[11px] transition";
+                }
+            });
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            if (controls) {
+                controls.autoRotate = state.autoRotate;
+                controls.autoRotateSpeed = 2.0;
+                controls.update();
+            }
+            renderer.render(scene, camera);
+            updateScreenLabels();
+        }
+
+        function onWindowResize() {
+            if (!container || !camera || !renderer) return;
+            camera.aspect = container.clientWidth / container.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(container.clientWidth, container.clientHeight);
+        }
+
+        function animateCameraTo(targetPos) {
+            const startPos = camera.position.clone();
+            const startTime = performance.now();
+            const duration = 500;
+            function step(now) {
+                const t = Math.min((now - startTime) / duration, 1);
+                const ease = 1 - Math.pow(1 - t, 3);
+                camera.position.lerpVectors(startPos, targetPos, ease);
+                controls.update();
+                if (t < 1) requestAnimationFrame(step);
+            }
+            requestAnimationFrame(step);
+        }
+
+        // =================================================================
+        // EVENT LISTENERS SETUP
+        // =================================================================
+        function setupListeners() {
+            // Mobile View Switcher
+            const btn3D = document.getElementById('mobile-tab-3d');
+            const btnMath = document.getElementById('mobile-tab-math');
+            const sidebar = document.getElementById('sidebar-panel');
+            const viewport = document.getElementById('viewport-panel');
+
+            btn3D.addEventListener('click', () => {
+                btn3D.className = "px-2.5 py-1 rounded-md bg-amber-400 text-slate-950 font-bold transition";
+                btnMath.className = "px-2.5 py-1 rounded-md hover:bg-slate-800 transition";
+                sidebar.classList.add('hidden');
+                viewport.classList.remove('hidden');
+                onWindowResize();
+            });
+
+            btnMath.addEventListener('click', () => {
+                btnMath.className = "px-2.5 py-1 rounded-md bg-amber-400 text-slate-950 font-bold transition";
+                btn3D.className = "px-2.5 py-1 rounded-md hover:bg-slate-800 transition";
+                sidebar.classList.remove('hidden');
+                viewport.classList.add('hidden');
+            });
+
+            // Exercise Selection Buttons
+            for (let i = 0; i < 5; i++) {
+                document.getElementById(`ex-btn-${i}`).addEventListener('click', () => {
+                    document.querySelectorAll('.ex-btn').forEach(b => {
+                        b.classList.remove('active', 'border-cyan-500/50', 'bg-cyan-950/40');
+                        b.classList.add('border-slate-800', 'bg-slate-800/40');
+                    });
+                    const activeBtn = document.getElementById(`ex-btn-${i}`);
+                    activeBtn.classList.add('active', 'border-cyan-500/50', 'bg-cyan-950/40');
+                    activeBtn.classList.remove('border-slate-800', 'bg-slate-800/40');
+
+                    state.exIndex = i;
+                    state.step = 1;
+                    updateExerciseScene();
+                });
+            }
+
+            // Step Selection Buttons
+            [1, 2, 3].forEach(s => {
+                document.getElementById(`step-btn-${s}`).addEventListener('click', () => {
+                    state.step = s;
+                    updateExerciseScene();
+                });
+            });
+
+            document.getElementById('btn-next-step').addEventListener('click', () => {
+                state.step = (state.step % 3) + 1;
+                updateExerciseScene();
+            });
+
+            // Edge Length Slider a
+            document.getElementById('slider-a').addEventListener('input', (e) => {
+                state.a = parseFloat(e.target.value);
+                document.getElementById('val-a').innerText = `a = ${state.a.toFixed(1)}`;
+                updateExerciseScene();
+            });
+
+            // Display Toggles
+            document.getElementById('toggle-labels').addEventListener('change', (e) => {
+                state.showLabels = e.target.checked;
+            });
+            document.getElementById('toggle-axes').addEventListener('change', (e) => {
+                state.showAxes = e.target.checked;
+                updateExerciseScene();
+            });
+            document.getElementById('toggle-helpers').addEventListener('change', (e) => {
+                state.showHelpers = e.target.checked;
+                updateExerciseScene();
+            });
+            document.getElementById('toggle-autorotate').addEventListener('change', (e) => {
+                state.autoRotate = e.target.checked;
+            });
+
+            // Reset Camera & Fullscreen
+            document.getElementById('btn-reset-cam').addEventListener('click', () => {
+                animateCameraTo(new THREE.Vector3(10, 8, 12));
+            });
+
+            document.getElementById('btn-fullscreen').addEventListener('click', () => {
+                if (!document.fullscreenElement) {
+                    document.documentElement.requestFullscreen().catch(() => {});
+                } else {
+                    document.exitFullscreen().catch(() => {});
+                }
+            });
+        }
+
+        // Initialize on Window Load
+        window.onload = function () {
+            init3D();
+            setupListeners();
+            if (typeof renderMathInElement === 'function') {
+                renderMathInElement(document.body, {
+                    delimiters: [
+                        { left: '$$', right: '$$', display: true },
+                        { left: '$', right: '$', display: false }
+                    ],
+                    throwOnError: false
+                });
+            }
+            animate();
+        };
+    </script>
+</body>
+</html>
