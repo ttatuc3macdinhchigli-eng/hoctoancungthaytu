@@ -1,0 +1,1293 @@
+<!DOCTYPE html>
+<html lang="vi" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Học Toán Cùng Thầy Tôn Tú - Ôn Tập 3D Hai Mặt Phẳng Song Song (Toán 11 KNTT)</title>
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0f9ff',
+                            500: '#0284c7',
+                            600: '#0369a1',
+                            700: '#075985',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Fira+Code:wght@400;600&display=swap" rel="stylesheet">
+    
+    <!-- Three.js & OrbitControls -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <!-- KaTeX CDN & Auto-render extension -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js"></script>
+
+    <style>
+        * {
+            touch-action: manipulation;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            user-select: none;
+            overflow: hidden;
+            background-color: #070b14;
+            margin: 0;
+            padding: 0;
+        }
+        .math-font {
+            font-family: 'STIX Two Math', 'Times New Roman', serif;
+            font-style: italic;
+        }
+        /* Custom Scrollbar */
+        .custom-scroll::-webkit-scrollbar {
+            width: 5px;
+        }
+        .custom-scroll::-webkit-scrollbar-track {
+            background: rgba(15, 23, 42, 0.85);
+        }
+        .custom-scroll::-webkit-scrollbar-thumb {
+            background: rgba(51, 65, 85, 0.85);
+            border-radius: 4px;
+        }
+        .custom-scroll::-webkit-scrollbar-thumb:hover {
+            background: rgba(100, 116, 139, 1);
+        }
+        /* 3D Label Overlays */
+        .label-3d {
+            position: absolute;
+            pointer-events: none;
+            transition: opacity 0.12s ease-out;
+            transform: translate(-50%, -50%);
+            white-space: nowrap;
+            font-weight: 700;
+            text-shadow: 0 2px 5px rgba(0,0,0,0.95);
+            z-index: 10;
+        }
+        /* Glassmorphism Effect */
+        .glass-card {
+            background: rgba(15, 23, 42, 0.88);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .katex {
+            font-size: 0.98em;
+        }
+        #canvas-container canvas {
+            touch-action: none;
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 h-screen w-screen flex flex-col overflow-hidden">
+
+    <!-- ================================================================= -->
+    <!-- TOP FIXED BRAND HEADER BANNER                                      -->
+    <!-- ================================================================= -->
+    <header class="w-full bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 text-slate-950 font-black py-2.5 px-4 shadow-xl border-b border-amber-300 text-sm md:text-base tracking-wider uppercase flex items-center justify-between z-30 shrink-0">
+        <div class="flex items-center gap-2">
+            <i class="fa-solid fa-graduation-cap text-lg md:text-xl"></i>
+            <span class="font-extrabold tracking-wide">HỌC TOÁN CÙNG THẦY TÔN TÚ</span>
+        </div>
+        
+        <!-- Mobile View Switcher Buttons -->
+        <div class="flex md:hidden items-center bg-slate-950/40 rounded-lg p-0.5 text-xs text-white">
+            <button id="mobile-tab-3d" class="px-2.5 py-1 rounded-md bg-amber-400 text-slate-950 font-bold transition">
+                <i class="fa-solid fa-cube mr-1"></i> Mô phỏng 3D
+            </button>
+            <button id="mobile-tab-math" class="px-2.5 py-1 rounded-md hover:bg-slate-800 transition">
+                <i class="fa-solid fa-book-open mr-1"></i> Đề & Lời giải
+            </button>
+        </div>
+    </header>
+
+    <!-- ================================================================= -->
+    <!-- MAIN CONTENT CONTAINER (SIDEBAR LEFT + 3D VIEWPORT RIGHT)         -->
+    <!-- ================================================================= -->
+    <div class="flex-1 w-full flex flex-col md:flex-row overflow-hidden relative">
+        
+        <!-- SIDEBAR PANEL -->
+        <aside id="sidebar-panel" class="custom-scroll w-full md:w-[440px] lg:w-[480px] shrink-0 h-full flex flex-col bg-slate-900/95 border-r border-slate-800 z-20 shadow-2xl overflow-y-auto p-3.5 gap-3 transition-all duration-300 hidden md:flex">
+            
+            <!-- HEADER BADGE -->
+            <div class="glass-card p-3 rounded-xl flex items-center justify-between gap-3 border border-sky-500/30 shadow-lg shrink-0">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-sky-500 via-blue-600 to-indigo-700 flex items-center justify-center text-white text-lg font-black shadow-md shrink-0">
+                        <i class="fa-solid fa-layer-group"></i>
+                    </div>
+                    <div>
+                        <h1 class="font-extrabold text-sm md:text-base leading-tight tracking-wide text-white">
+                            ÔN TẬP: HAI MẶT PHẲNG SONG SONG
+                        </h1>
+                        <p class="text-[11px] text-sky-400 font-medium mt-0.5">
+                            Toán 11 (Kết nối tri thức) • Bài tập & Mô phỏng 3D
+                        </p>
+                    </div>
+                </div>
+                <div class="bg-slate-950/80 px-2.5 py-1.5 rounded-lg border border-amber-500/40 text-center shrink-0">
+                    <div class="text-[10px] text-slate-400">Điểm ôn tập</div>
+                    <div id="score-display" class="font-mono font-extrabold text-xs text-amber-400">0 / 4</div>
+                </div>
+            </div>
+
+            <!-- SECTION 1: BỘ CÂU HỎI ÔN TẬP TRỌNG TÂM -->
+            <div class="space-y-1.5 shrink-0">
+                <div class="text-[11px] font-bold text-slate-400 uppercase tracking-wider flex items-center justify-between">
+                    <span><i class="fa-solid fa-list-check text-sky-400 mr-1"></i> Chọn dạng bài tập ôn luyện</span>
+                    <span class="text-[10px] text-slate-500 font-normal">4 dạng chuẩn SGK</span>
+                </div>
+                
+                <div class="grid grid-cols-2 gap-1.5 text-xs">
+                    <button data-q="0" class="q-select-btn p-2 rounded-xl border border-emerald-500/50 bg-emerald-950/40 hover:bg-emerald-900/40 text-left transition active ring-2 ring-emerald-400">
+                        <div class="font-bold text-emerald-400 flex items-center justify-between">
+                            <span>Bài 1: Hình chóp & Trung điểm</span>
+                            <span id="badge-q0" class="text-[10px]"><i class="fa-regular fa-circle"></i></span>
+                        </div>
+                        <div class="text-[11px] text-slate-300 mt-0.5">Chứng minh $(MNP) \parallel (ABCD)$</div>
+                    </button>
+
+                    <button data-q="1" class="q-select-btn p-2 rounded-xl border border-indigo-500/40 bg-indigo-950/30 hover:bg-indigo-900/40 text-left transition">
+                        <div class="font-bold text-indigo-400 flex items-center justify-between">
+                            <span>Bài 2: Thiết diện song song</span>
+                            <span id="badge-q1" class="text-[10px]"><i class="fa-regular fa-circle"></i></span>
+                        </div>
+                        <div class="text-[11px] text-slate-300 mt-0.5">Mặt phẳng $(\alpha) \parallel (SBC)$ cắt chóp</div>
+                    </button>
+
+                    <button data-q="2" class="q-select-btn p-2 rounded-xl border border-cyan-500/40 bg-cyan-950/30 hover:bg-cyan-900/40 text-left transition">
+                        <div class="font-bold text-cyan-400 flex items-center justify-between">
+                            <span>Bài 3: Định lí Thalès</span>
+                            <span id="badge-q2" class="text-[10px]"><i class="fa-regular fa-circle"></i></span>
+                        </div>
+                        <div class="text-[11px] text-slate-300 mt-0.5">Tính tỉ số & độ dài đoạn thẳng</div>
+                    </button>
+
+                    <button data-q="3" class="q-select-btn p-2 rounded-xl border border-purple-500/40 bg-purple-950/30 hover:bg-purple-900/40 text-left transition">
+                        <div class="font-bold text-purple-400 flex items-center justify-between">
+                            <span>Bài 4: Hình hộp & Lăng trụ</span>
+                            <span id="badge-q3" class="text-[10px]"><i class="fa-regular fa-circle"></i></span>
+                        </div>
+                        <div class="text-[11px] text-slate-300 mt-0.5">Hai mặt phẳng chéo song song</div>
+                    </button>
+                </div>
+            </div>
+
+            <!-- SECTION 2: ĐIỀU KHIỂN TRỰC QUAN 3D -->
+            <div class="glass-card p-2.5 rounded-xl border border-slate-800 space-y-2 shrink-0">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-bold text-slate-300 uppercase tracking-wider">
+                        <i class="fa-solid fa-sliders text-sky-400 mr-1"></i> Tương tác mô hình 3D
+                    </span>
+                    <label class="flex items-center gap-1.5 text-[11px] text-slate-300 cursor-pointer">
+                        <input type="checkbox" id="toggle-autorotate" class="w-3.5 h-3.5 accent-sky-400 rounded">
+                        <span>Tự động xoay</span>
+                    </label>
+                </div>
+
+                <!-- Contextual Interactive Slider -->
+                <div class="space-y-1">
+                    <div class="flex justify-between text-xs">
+                        <span id="slider-label" class="text-slate-300">Tỉ số vị trí mặt phẳng cắt $k = \frac{SM}{SA}$:</span>
+                        <span id="slider-val" class="font-mono font-bold text-sky-400">0.50 (Trung điểm)</span>
+                    </div>
+                    <input type="range" id="slider-param" min="0.2" max="0.85" step="0.01" value="0.5"
+                           class="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-sky-400">
+                </div>
+
+                <!-- Step Highlight Pills -->
+                <div class="grid grid-cols-4 gap-1 text-[11px] font-bold pt-0.5">
+                    <button data-step="0" class="step-btn py-1 px-1 rounded-lg bg-sky-500 text-slate-950 transition">Toàn bộ</button>
+                    <button data-step="1" class="step-btn py-1 px-1 rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 transition">Bước 1</button>
+                    <button data-step="2" class="step-btn py-1 px-1 rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 transition">Bước 2</button>
+                    <button data-step="3" class="step-btn py-1 px-1 rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 transition">Bước 3</button>
+                </div>
+            </div>
+
+            <!-- SECTION 3: ĐỀ BÀI & TRẮC NGHIỆM KIỂM TRA KIẾN THỨC -->
+            <div class="glass-card rounded-xl p-3 border-l-4 border-sky-500 space-y-2.5 shrink-0">
+                <div class="flex items-center justify-between">
+                    <div id="problem-title" class="text-xs font-extrabold text-sky-400 uppercase tracking-wide flex items-center gap-1.5">
+                        <i class="fa-solid fa-file-lines"></i> 1. ĐỀ BÀI ÔN TẬP (BÀI 1)
+                    </div>
+                    <span id="problem-tag" class="text-[10px] px-2 py-0.5 rounded bg-sky-500/20 text-sky-300 border border-sky-500/30 font-semibold">
+                        Định lí 1
+                    </span>
+                </div>
+
+                <div id="problem-text" class="text-xs text-slate-200 leading-relaxed bg-slate-950/60 p-2.5 rounded-lg border border-slate-800"></div>
+
+                <!-- Interactive Multiple Choice Options -->
+                <div class="space-y-1.5">
+                    <div class="text-[11px] font-bold text-amber-400 flex items-center gap-1">
+                        <i class="fa-solid fa-circle-question"></i> Chọn đáp án đúng trước khi xem lời giải:
+                    </div>
+                    <div id="mcq-container" class="grid grid-cols-1 gap-1.5 text-xs"></div>
+                </div>
+
+                <!-- Immediate Quiz Feedback -->
+                <div id="mcq-feedback" class="hidden text-xs p-2.5 rounded-lg border space-y-1"></div>
+            </div>
+
+            <!-- SECTION 4: HƯỚNG DẪN GIẢI CHI TIẾT TỪNG BƯỚC -->
+            <div class="glass-card rounded-xl p-3 border-l-4 border-emerald-500 space-y-2 shrink-0">
+                <div class="flex items-center justify-between">
+                    <div class="text-xs font-extrabold text-emerald-400 uppercase tracking-wide flex items-center gap-1.5">
+                        <i class="fa-solid fa-chalkboard-user"></i> 2. HƯỚNG DẪN GIẢI CHI TIẾT
+                    </div>
+                    <button id="btn-toggle-solution" class="text-[11px] px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold transition shadow">
+                        <i class="fa-solid fa-eye mr-1"></i> Hiện lời giải
+                    </button>
+                </div>
+
+                <div id="solution-wrapper" class="hidden space-y-2 pt-1">
+                    <div id="solution-content" class="text-xs text-slate-200 leading-relaxed space-y-2"></div>
+                </div>
+            </div>
+
+            <!-- SECTION 5: CÂU HỎI MỞ RỘNG TƯƠNG TỰ -->
+            <div class="glass-card rounded-xl p-3.5 border-l-4 border-amber-500 space-y-2.5 shrink-0 bg-gradient-to-br from-amber-950/30 to-slate-900/90">
+                <div class="flex items-center justify-between">
+                    <div class="text-xs font-extrabold text-amber-400 uppercase tracking-wide flex items-center gap-1.5">
+                        <i class="fa-solid fa-lightbulb"></i> 3. CÂU HỎI MỞ RỘNG TƯƠNG TỰ
+                    </div>
+                    <span class="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 font-bold">
+                        Vận dụng
+                    </span>
+                </div>
+
+                <div id="extension-question" class="text-xs text-slate-200 leading-relaxed"></div>
+
+                <div id="extension-options" class="grid grid-cols-1 gap-1.5 text-xs"></div>
+
+                <div id="extension-feedback" class="hidden text-xs p-2.5 rounded-lg border space-y-1"></div>
+            </div>
+
+        </aside>
+
+        <!-- RIGHT AREA: 3D VIEWPORT CONTAINER -->
+        <main id="viewport-panel" class="flex-1 h-full relative overflow-hidden bg-slate-950">
+
+            <!-- 3D WebGL Canvas -->
+            <div id="canvas-container" class="w-full h-full cursor-grab active:cursor-grabbing"></div>
+
+            <!-- Top-Left Floating Theorem Summary HUD -->
+            <div class="absolute top-3 left-3 z-20 pointer-events-none max-w-[92%] sm:max-w-md">
+                <div class="glass-card px-3.5 py-2.5 rounded-xl border border-sky-500/30 shadow-xl space-y-1">
+                    <div class="text-[11px] font-bold text-sky-400 uppercase tracking-wider flex items-center gap-1.5">
+                        <i class="fa-solid fa-cube"></i>
+                        <span id="hud-title">MÔ HÌNH 3D: HÌNH CHÓP S.ABCD</span>
+                    </div>
+                    <div id="hud-formula" class="text-xs sm:text-sm font-bold text-white"></div>
+                </div>
+            </div>
+
+            <!-- Dynamic 3D Floating Labels Pool -->
+            <div id="labels-container" class="absolute inset-0 pointer-events-none overflow-hidden z-10"></div>
+
+            <!-- Top Right Utility Buttons -->
+            <div class="absolute top-3 right-3 z-20 flex items-center gap-1.5 pointer-events-auto">
+                <button id="btn-reset-cam" class="p-2 rounded-xl glass-card text-slate-300 hover:text-white hover:bg-slate-800 transition text-xs shadow-lg" title="Đặt lại góc nhìn 3D">
+                    <i class="fa-solid fa-camera-rotate mr-1"></i> Góc nhìn chuẩn
+                </button>
+                <button id="btn-fullscreen" class="p-2 rounded-xl glass-card text-slate-300 hover:text-white hover:bg-slate-800 transition text-xs shadow-lg" title="Toàn màn hình">
+                    <i class="fa-solid fa-expand"></i>
+                </button>
+            </div>
+
+            <!-- Bottom Operation Instruction Bar -->
+            <div class="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 pointer-events-none w-[92%] md:w-auto">
+                <div class="glass-card px-4 py-1.5 rounded-full text-xs text-slate-300 flex items-center justify-center gap-3 pointer-events-auto shadow-xl border border-slate-800">
+                    <span><i class="fa-solid fa-mouse text-sky-400"></i> Kéo chuột trái / Vuốt để xoay 3D</span>
+                    <span class="text-slate-700">•</span>
+                    <span><i class="fa-solid fa-arrows-up-down-left-right text-sky-400"></i> Chuột phải để di chuyển</span>
+                    <span class="text-slate-700">•</span>
+                    <span><i class="fa-solid fa-magnifying-glass-plus text-sky-400"></i> Cuộn chuột để Thu/Phóng</span>
+                </div>
+            </div>
+
+        </main>
+
+    </div>
+
+    <!-- ================================================================= -->
+    <!-- THREE.JS 3D ENGINE & CURRICULUM QUESTION BANK                     -->
+    <!-- ================================================================= -->
+    <script>
+        /**
+         * 3D INTERACTIVE REVIEW APP FOR "HAI MẶT PHẲNG SONG SONG - TOÁN 11 KNTT"
+         * HỌC TOÁN CÙNG THẦY TÔN TÚ
+         * Includes 4 comprehensive 3D models + Step-by-step solutions + MCQs + Extension problems
+         */
+
+        const QUESTIONS = [
+            {
+                id: 0,
+                tag: "Định lí 1",
+                title: "1. ĐỀ BÀI ÔN TẬP (BÀI 1 - CHỨNG MINH SONG SONG)",
+                hudTitle: "BÀI 1: HÌNH CHÓP S.ABCD & MẶT PHẲNG (MNP)",
+                hudLatex: "\\begin{cases} MN \\parallel AB \\subset (ABCD) \\\\ NP \\parallel BC \\subset (ABCD) \\end{cases} \\implies (MNP) \\parallel (ABCD)",
+                sliderLabel: "Tỉ số vị trí $k = \\frac{SM}{SA} = \\frac{SN}{SB} = \\frac{SP}{SC}$:",
+                sliderMin: 0.25,
+                sliderMax: 0.80,
+                sliderStep: 0.05,
+                sliderDefault: 0.50,
+                formatSlider: (v) => `${v.toFixed(2)}${Math.abs(v - 0.5) < 0.01 ? ' (Trung điểm)' : ''}`,
+                problemHTML: `Cho hình chóp $S.ABCD$ có đáy $ABCD$ là hình bình hành. Gọi $M, N, P$ lần lượt là trung điểm của các cạnh $SA, SB, SC$.<br>
+                <span class="text-amber-400 font-bold">Câu hỏi:</span> Mặt phẳng $(MNP)$ song song với mặt phẳng nào sau đây?`,
+                options: [
+                    { key: "A", text: "Mặt phẳng $(SAD)$" },
+                    { key: "B", text: "Mặt phẳng $(ABCD)$" },
+                    { key: "C", text: "Mặt phẳng $(SCD)$" },
+                    { key: "D", text: "Mặt phẳng $(SBD)$" }
+                ],
+                correct: "B",
+                feedbackCorrect: "Chính xác! Vì $MN$ và $NP$ là hai đường trung bình của $\\triangle SAB$ và $\\triangle SBC$ nên $MN \\parallel AB$ và $NP \\parallel BC$, suy ra $(MNP) \\parallel (ABCD)$ theo Định lí 1.",
+                feedbackWrong: "Chưa đúng! Hãy quan sát hai đường màu đỏ $MN$ và xanh lá $NP$ trên mô hình 3D: chúng lần lượt song song với hai cạnh đáy $AB$ và $BC$.",
+                steps: [
+                    {
+                        title: "Bước 1. Chứng minh $MN \\parallel (ABCD)$",
+                        border: "border-red-500/40",
+                        color: "text-red-400",
+                        html: `Xét $\\triangle SAB$, ta có $M, N$ lần lượt là trung điểm của $SA, SB$ nên $MN$ là đường trung bình của $\\triangle SAB$.<br>
+                        Suy ra $MN \\parallel AB$. Mà $AB \\subset (ABCD)$ và $MN \\not\\subset (ABCD)$ nên:
+                        $$MN \\parallel (ABCD)$$`
+                    },
+                    {
+                        title: "Bước 2. Chứng minh $NP \\parallel (ABCD)$",
+                        border: "border-emerald-500/40",
+                        color: "text-emerald-400",
+                        html: `Tương tự, trong $\\triangle SBC$, $NP$ là đường trung bình nên $NP \\parallel BC$.<br>
+                        Vì $BC \\subset (ABCD)$ và $NP \\not\\subset (ABCD)$ nên:
+                        $$NP \\parallel (ABCD)$$`
+                    },
+                    {
+                        title: "Bước 3. Áp dụng Định lí 1 kết luận $(MNP) \\parallel (ABCD)$",
+                        border: "border-purple-500/40",
+                        color: "text-purple-400",
+                        html: `Trong mặt phẳng $(MNP)$, hai đường thẳng $MN$ và $NP$ cắt nhau tại $N$ và cùng song song với $(ABCD)$. Theo Định lí 1:
+                        $$\\boxed{(MNP) \\parallel (ABCD)}$$`
+                    }
+                ],
+                extQuestion: `<span class="font-bold text-amber-300">Câu hỏi tương tự:</span> Gọi $Q$ là giao điểm của mặt phẳng $(MNP)$ với cạnh $SD$. Nếu diện tích đáy $S_{ABCD} = 24\\text{ cm}^2$ thì diện tích tứ giác $MNPQ$ bằng bao nhiêu?`,
+                extOptions: [
+                    { key: "A", text: "$12\\text{ cm}^2$" },
+                    { key: "B", text: "$6\\text{ cm}^2$" },
+                    { key: "C", text: "$8\\text{ cm}^2$" }
+                ],
+                extCorrect: "B",
+                extExplanation: "Tứ giác $MNPQ$ đồng dạng với hình bình hành $ABCD$ theo tỉ số vị tự $k = \\frac{SM}{SA} = \\frac{1}{2}$, nên $S_{MNPQ} = k^2 \\cdot S_{ABCD} = \\left(\\frac{1}{2}\\right)^2 \\cdot 24 = 6\\text{ cm}^2$."
+            },
+            {
+                id: 1,
+                tag: "Định lí 2",
+                title: "1. ĐỀ BÀI ÔN TẬP (BÀI 2 - THIẾT DIỆN SONG SONG)",
+                hudTitle: "BÀI 2: MẶT PHẲNG (α) QUA M VÀ SONG SONG VỚI (SBC)",
+                hudLatex: "\\begin{cases} (\\alpha) \\parallel (SBC) \\\\ (\\alpha) \\cap (ABCD) = MN \\end{cases} \\implies MN \\parallel BC",
+                sliderLabel: "Tỉ số vị trí điểm $M$ trên $AB$ ($\\frac{AM}{AB}$):",
+                sliderMin: 0.20,
+                sliderMax: 0.80,
+                sliderStep: 0.05,
+                sliderDefault: 0.50,
+                formatSlider: (v) => `${v.toFixed(2)}${Math.abs(v - 0.5) < 0.01 ? ' (Trung điểm)' : ''}`,
+                problemHTML: `Cho hình chóp $S.ABCD$ có đáy $ABCD$ là hình thang ($AD \\parallel BC$, $AD = 2BC$). Lấy điểm $M$ nằm trên cạnh $AB$ ($M \\neq A, B$). Mặt phẳng $(\\alpha)$ đi qua $M$ và song song với mặt phẳng $(SBC)$ cắt hình chóp $S.ABCD$ theo thiết diện là hình gì?`,
+                options: [
+                    { key: "A", text: "Hình tam giác" },
+                    { key: "B", text: "Hình bình hành" },
+                    { key: "C", text: "Hình thang" },
+                    { key: "D", text: "Hình ngũ giác" }
+                ],
+                correct: "C",
+                feedbackCorrect: "Tuyệt vời! Theo Định lí 2, giao tuyến của $(\\alpha)$ với $(ABCD)$ là $MN \\parallel BC$ và với $(SAD)$ là $PQ \\parallel AD$. Vì $AD \\parallel BC$ nên $MN \\parallel PQ$, tạo thành thiết diện là hình thang $MNPQ$.",
+                feedbackWrong: "Chưa chính xác! Hãy xoay mô hình 3D để nhìn rõ mặt phẳng $(\\alpha)$ màu tím cắt cả 4 mặt $(ABCD), (SAB), (SAD), (SCD)$ tạo thành tứ giác $MNPQ$ có một cặp cạnh đối song song.",
+                steps: [
+                    {
+                        title: "Bước 1. Tìm giao tuyến với đáy $(ABCD)$ và mặt bên $(SAB)$",
+                        border: "border-red-500/40",
+                        color: "text-red-400",
+                        html: `Vì $(\\alpha) \\parallel (SBC)$ và $M \\in (\\alpha) \\cap (ABCD)$, theo Định lí 2:<br>
+                        • $(\\alpha) \\cap (ABCD) = MN$ với $MN \\parallel BC$ ($N \\in CD$).<br>
+                        • $(\\alpha) \\cap (SAB) = MQ$ với $MQ \\parallel SB$ ($Q \\in SA$).`
+                    },
+                    {
+                        title: "Bước 2. Tìm giao tuyến với $(SAD)$ và $(SCD)$",
+                        border: "border-emerald-500/40",
+                        color: "text-emerald-400",
+                        html: `Vì $(\\alpha) \\parallel (SBC)$ nên $(\\alpha)$ cắt $(SCD)$ theo giao tuyến $NP \\parallel SC$ ($P \\in SD$).<br>
+                        Khi đó $(\\alpha)$ cắt $(SAD)$ theo đoạn nối $PQ$.`
+                    },
+                    {
+                        title: "Bước 3. Xác định hình dạng thiết diện $MNPQ$",
+                        border: "border-purple-500/40",
+                        color: "text-purple-400",
+                        html: `Ta có $MN \\parallel BC$ và $AD \\parallel BC \\implies MN \\parallel AD$. Mà $(SAD) \\cap (\\alpha) = PQ$ và $AD \\parallel (\\alpha)$ nên $PQ \\parallel AD \\parallel MN$.<br>
+                        Hai cạnh bên $MQ$ và $NP$ không song song (do $SB$ và $SC$ cắt nhau tại $S$). Vậy thiết diện $MNPQ$ là <strong>hình thang</strong>.`
+                    }
+                ],
+                extQuestion: `<span class="font-bold text-amber-300">Câu hỏi tương tự:</span> Nếu thay giả thiết đáy $ABCD$ là <strong>hình bình hành</strong> ($AD = BC$) thì thiết diện $MNPQ$ của $(\\alpha)$ với hình chóp $S.ABCD$ trở thành hình gì?`,
+                extOptions: [
+                    { key: "A", text: "Vẫn là hình thang (không phải hình bình hành)" },
+                    { key: "B", text: "Hình bình hành" },
+                    { key: "C", text: "Hình thoi" }
+                ],
+                extCorrect: "A",
+                extExplanation: "Dù $AD = BC$ thì $MQ \\parallel SB$ và $NP \\parallel SC$. Vì $SB$ và $SC$ cắt nhau tại $S$ nên $MQ$ không song song với $NP$. Do đó thiết diện $MNPQ$ vẫn chỉ là <strong>hình thang</strong>!"
+            },
+            {
+                id: 2,
+                tag: "Định lí Thalès",
+                title: "1. ĐỀ BÀI ÔN TẬP (BÀI 3 - ĐỊNH LÍ THALÈS TRONG KHÔNG GIAN)",
+                hudTitle: "BÀI 3: BA MẶT PHẲNG SONG SONG (P) // (Q) // (R)",
+                hudLatex: "(P) \\parallel (Q) \\parallel (R) \\implies \\frac{AB}{BC} = \\frac{A'B'}{B'C'}",
+                sliderLabel: "Tỉ số vị trí mặt phẳng giữa $(Q)$ ($\\frac{AB}{AC}$):",
+                sliderMin: 0.25,
+                sliderMax: 0.75,
+                sliderStep: 0.05,
+                sliderDefault: 0.40,
+                formatSlider: (v) => `AB/AC = ${v.toFixed(2)}`,
+                problemHTML: `Ba mặt phẳng đôi một song song $(P)$, $(Q)$, $(R)$ lần lượt cắt hai đường thẳng chéo nhau $d$ và $d'$ tại các điểm $A, B, C$ và $A', B', C'$. Biết $AB = 4\\text{ cm}$, $BC = 6\\text{ cm}$ và $A'C' = 15\\text{ cm}$.<br>
+                <span class="text-amber-400 font-bold">Câu hỏi:</span> Độ dài đoạn thẳng $A'B'$ bằng bao nhiêu?`,
+                options: [
+                    { key: "A", text: "$A'B' = 5\\text{ cm}$" },
+                    { key: "B", text: "$A'B' = 6\\text{ cm}$" },
+                    { key: "C", text: "$A'B' = 9\\text{ cm}$" },
+                    { key: "D", text: "$A'B' = 10\\text{ cm}$" }
+                ],
+                correct: "B",
+                feedbackCorrect: "Chính xác! Áp dụng Định lí Thalès trong không gian: $\\frac{A'B'}{A'C'} = \\frac{AB}{AC} = \\frac{4}{4 + 6} = \\frac{2}{5} \\implies A'B' = 15 \\cdot \\frac{2}{5} = 6\\text{ cm}$.",
+                feedbackWrong: "Chưa đúng! Lưu ý đề bài cho $AB = 4$, $BC = 6$ nên tổng $AC = AB + BC = 10\\text{ cm}$. Hãy lập tỉ số $\\frac{A'B'}{A'C'} = \\frac{AB}{AC}$.",
+                steps: [
+                    {
+                        title: "Bước 1. Tính độ dài đoạn $AC$ trên cát tuyến $d$",
+                        border: "border-red-500/40",
+                        color: "text-red-400",
+                        html: `Vì mặt phẳng $(Q)$ nằm giữa $(P)$ và $(R)$ (theo thứ tự $A, B, C$) nên điểm $B$ nằm giữa $A$ và $C$:
+                        $$AC = AB + BC = 4 + 6 = 10\\text{ (cm)}$$`
+                    },
+                    {
+                        title: "Bước 2. Áp dụng Định lí Thalès trong không gian",
+                        border: "border-emerald-500/40",
+                        color: "text-emerald-400",
+                        html: `Ba mặt phẳng đôi một song song $(P) \\parallel (Q) \\parallel (R)$ chắn trên hai cát tuyến $d, d'$ các đoạn thẳng tương ứng tỉ lệ:
+                        $$\\frac{A'B'}{AB} = \\frac{B'C'}{BC} = \\frac{A'C'}{AC}$$`
+                    },
+                    {
+                        title: "Bước 3. Thay số tính $A'B'$",
+                        border: "border-cyan-500/40",
+                        color: "text-cyan-400",
+                        html: `Thay $AB = 4$, $AC = 10$, $A'C' = 15$ vào tỉ lệ thức:
+                        $$A'B' = A'C' \\cdot \\frac{AB}{AC} = 15 \\cdot \\frac{4}{10} = \\boxed{6\\text{ (cm)}}$$`
+                    }
+                ],
+                extQuestion: `<span class="font-bold text-amber-300">Câu hỏi tương tự:</span> Với các giả thiết như trên ($AB = 4\\text{ cm}, BC = 6\\text{ cm}$), nếu biết thêm $B'C' - A'B' = 3\\text{ cm}$ thì độ dài $B'C'$ bằng bao nhiêu?`,
+                extOptions: [
+                    { key: "A", text: "$B'C' = 6\\text{ cm}$" },
+                    { key: "B", text: "$B'C' = 9\\text{ cm}$" },
+                    { key: "C", text: "$B'C' = 12\\text{ cm}$" }
+                ],
+                extCorrect: "B",
+                extExplanation: "Ta có $\\frac{A'B'}{B'C'} = \\frac{AB}{BC} = \\frac{4}{6} = \\frac{2}{3} \\implies A'B' = \\frac{2}{3}B'C'$. Thay vào $B'C' - A'B' = 3$ được $\\frac{1}{3}B'C' = 3 \\implies B'C' = 9\\text{ cm}$."
+            },
+            {
+                id: 3,
+                tag: "Hình hộp",
+                title: "1. ĐỀ BÀI ÔN TẬP (BÀI 4 - HAI MẶT PHẲNG CHÉO TRONG HÌNH HỘP)",
+                hudTitle: "BÀI 4: HÌNH HỘP ABCD.A'B'C'D' & (BDA') // (B'D'C)",
+                hudLatex: "\\begin{cases} BD \\parallel B'D' \\\\ A'B \\parallel D'C \\end{cases} \\implies (BDA') \\parallel (B'D'C)",
+                sliderLabel: "Khoảng cách tách hiển thị hai mặt phẳng chéo:",
+                sliderMin: 0.0,
+                sliderMax: 1.0,
+                sliderStep: 0.05,
+                sliderDefault: 0.50,
+                formatSlider: (v) => `Độ nổi khối: ${Math.round(v * 100)}%`,
+                problemHTML: `Cho hình hộp $ABCD.A'B'C'D'$. Mặt phẳng $(BDA')$ song song với mặt phẳng nào sau đây?`,
+                options: [
+                    { key: "A", text: "Mặt phẳng $(ACD')$" },
+                    { key: "B", text: "Mặt phẳng $(B'D'C)$" },
+                    { key: "C", text: "Mặt phẳng $(A'C'D)$" },
+                    { key: "D", text: "Mặt phẳng $(AB'C)$" }
+                ],
+                correct: "B",
+                feedbackCorrect: "Xuất sắc! Trong hình hộp $ABCD.A'B'C'D'$, ta có $BD \\parallel B'D'$ và $A'B \\parallel D'C$, nên hai mặt phẳng chéo $(BDA')$ và $(B'D'C)$ song song với nhau.",
+                feedbackWrong: "Chưa chính xác! Hãy quan sát hai tam giác màu đỏ $(BDA')$ và màu xanh lá $(B'D'C)$ trong hình hộp 3D: các cạnh của chúng song song từng đôi một.",
+                steps: [
+                    {
+                        title: "Bước 1. Chứng minh $BD \\parallel (B'D'C)$",
+                        border: "border-red-500/40",
+                        color: "text-red-400",
+                        html: `Tứ giác $BDD'B'$ có $BB' \\parallel DD'$ và $BB' = DD'$ nên là hình bình hành.<br>
+                        Suy ra $BD \\parallel B'D'$. Vì $B'D' \\subset (B'D'C)$ nên:
+                        $$BD \\parallel (B'D'C)$$`
+                    },
+                    {
+                        title: "Bước 2. Chứng minh $A'B \\parallel (B'D'C)$",
+                        border: "border-emerald-500/40",
+                        color: "text-emerald-400",
+                        html: `Tứ giác $A'BCD'$ có $A'D' \\parallel BC$ và $A'D' = BC$ nên là hình bình hành.<br>
+                        Suy ra $A'B \\parallel D'C$. Vì $D'C \\subset (B'D'C)$ nên:
+                        $$A'B \\parallel (B'D'C)$$`
+                    },
+                    {
+                        title: "Bước 3. Kết luận $(BDA') \\parallel (B'D'C)$",
+                        border: "border-purple-500/40",
+                        color: "text-purple-400",
+                        html: `Trong mặt phẳng $(BDA')$, hai đường thẳng $BD$ và $A'B$ cắt nhau tại $B$ và cùng song song với $(B'D'C)$. Theo Định lí 1:
+                        $$\\boxed{(BDA') \\parallel (B'D'C)}$$`
+                    }
+                ],
+                extQuestion: `<span class="font-bold text-amber-300">Câu hỏi tương tự:</span> Đường chéo chính $AC'$ của hình hộp $ABCD.A'B'C'D'$ cắt hai mặt phẳng song song $(BDA')$ và $(B'D'C)$ lần lượt tại $I$ và $J$. Tỉ số $\\frac{AI}{AC'}$ bằng bao nhiêu?`,
+                extOptions: [
+                    { key: "A", text: "$\\frac{1}{2}$" },
+                    { key: "B", text: "$\\frac{1}{3}$" },
+                    { key: "C", text: "$\\frac{2}{3}$" }
+                ],
+                extCorrect: "B",
+                extExplanation: "Hai mặt phẳng song song $(BDA')$ và $(B'D'C)$ chia đường chéo $AC'$ thành ba đoạn bằng nhau: $AI = IJ = JC'$. Do đó $\\frac{AI}{AC'} = \\frac{1}{3}$."
+            }
+        ];
+
+        const state = {
+            qIndex: 0,
+            param: 0.50,
+            highlightStep: 0,
+            autoRotate: false,
+            solvedSet: new Set()
+        };
+
+        let scene, camera, renderer, controls;
+        let modelGroup;
+        let tempVec;
+        let activeLabels = []; // { text, pos: THREE.Vector3, bgClass }
+
+        const container = document.getElementById('canvas-container');
+        const labelsContainer = document.getElementById('labels-container');
+
+        function safeRenderKaTeX(latex, elementId, options = {}) {
+            const el = document.getElementById(elementId);
+            if (!el) return;
+            try {
+                if (typeof katex !== 'undefined') {
+                    katex.render(latex, el, { throwOnError: false, ...options });
+                } else {
+                    el.innerText = latex;
+                }
+            } catch (err) {
+                el.innerText = latex;
+            }
+        }
+
+        function renderMathInPage() {
+            if (typeof renderMathInElement === 'function') {
+                try {
+                    renderMathInElement(document.body, {
+                        delimiters: [
+                            {left: '$$', right: '$$', display: true},
+                            {left: '\\[', right: '\\]', display: true},
+                            {left: '$', right: '$', display: false},
+                            {left: '\\(', right: '\\)', display: false}
+                        ],
+                        throwOnError: false
+                    });
+                } catch (e) {}
+            }
+        }
+
+        function init3D() {
+            if (typeof THREE === 'undefined') return;
+            tempVec = new THREE.Vector3();
+
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x070b14);
+
+            camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
+            camera.position.set(11, 8.5, 12.5);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: "high-performance" });
+            renderer.setSize(container.clientWidth, container.clientHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            container.appendChild(renderer.domElement);
+
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+            controls.target.set(0, 2.0, 0);
+
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.85);
+            scene.add(ambientLight);
+
+            const dirLight = new THREE.DirectionalLight(0xffffff, 0.85);
+            dirLight.position.set(12, 22, 14);
+            scene.add(dirLight);
+
+            const rimLight = new THREE.DirectionalLight(0x38bdf8, 0.35);
+            rimLight.position.set(-12, -8, -10);
+            scene.add(rimLight);
+
+            // Subtle Ground Reference Grid
+            const grid = new THREE.GridHelper(16, 16, 0x1e293b, 0x0f172a);
+            grid.position.y = -0.02;
+            scene.add(grid);
+
+            modelGroup = new THREE.Group();
+            scene.add(modelGroup);
+
+            rebuild3DScene();
+            window.addEventListener('resize', onWindowResize);
+        }
+
+        // --- HELPER PRIMITIVES FOR 3D GEOMETRY ---
+        function clearModelGroup() {
+            while (modelGroup.children.length > 0) {
+                const child = modelGroup.children[0];
+                if (child.geometry) child.geometry.dispose();
+                modelGroup.remove(child);
+            }
+            activeLabels = [];
+        }
+
+        function addSegment(p1, p2, color, radius = 0.045, dashed = false) {
+            if (dashed) {
+                const geo = new THREE.BufferGeometry().setFromPoints([p1, p2]);
+                const mat = new THREE.LineDashedMaterial({ color: color, dashSize: 0.22, gapSize: 0.16 });
+                const line = new THREE.Line(geo, mat);
+                line.computeLineDistances();
+                modelGroup.add(line);
+                return line;
+            } else {
+                const dir = new THREE.Vector3().subVectors(p2, p1);
+                const len = dir.length();
+                if (len < 1e-4) return null;
+                const geo = new THREE.CylinderGeometry(radius, radius, len, 14);
+                const mat = new THREE.MeshStandardMaterial({
+                    color: color,
+                    emissive: color,
+                    emissiveIntensity: 0.35,
+                    roughness: 0.25
+                });
+                const mesh = new THREE.Mesh(geo, mat);
+                mesh.position.copy(p1).add(p2).multiplyScalar(0.5);
+                mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir.clone().normalize());
+                modelGroup.add(mesh);
+                return mesh;
+            }
+        }
+
+        function addVertexSphere(pos, color, radius = 0.13) {
+            const geo = new THREE.SphereGeometry(radius, 20, 20);
+            const mat = new THREE.MeshStandardMaterial({
+                color: color,
+                emissive: color,
+                emissiveIntensity: 0.65
+            });
+            const mesh = new THREE.Mesh(geo, mat);
+            mesh.position.copy(pos);
+            modelGroup.add(mesh);
+            return mesh;
+        }
+
+        function addPolygonSurface(points, color, opacity = 0.32, borderColor = null) {
+            if (points.length < 3) return;
+            const positions = [];
+            for (let i = 1; i < points.length - 1; i++) {
+                positions.push(
+                    points[0].x, points[0].y, points[0].z,
+                    points[i].x, points[i].y, points[i].z,
+                    points[i + 1].x, points[i + 1].y, points[i + 1].z
+                );
+            }
+            const geo = new THREE.BufferGeometry();
+            geo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+            geo.computeVertexNormals();
+
+            const mat = new THREE.MeshPhysicalMaterial({
+                color: color,
+                transparent: true,
+                opacity: opacity,
+                depthWrite: false,
+                side: THREE.DoubleSide,
+                roughness: 0.2
+            });
+            const mesh = new THREE.Mesh(geo, mat);
+            mesh.renderOrder = 2;
+            modelGroup.add(mesh);
+
+            if (borderColor !== null) {
+                for (let i = 0; i < points.length; i++) {
+                    const next = points[(i + 1) % points.length];
+                    addSegment(points[i], next, borderColor, 0.04);
+                }
+            }
+        }
+
+        function registerLabel(text, pos, bgClass = "bg-slate-800/90 text-white border-slate-500") {
+            activeLabels.push({ text, pos: pos.clone(), bgClass });
+        }
+
+        // --- BUILD EACH OF THE 4 CURRICULUM 3D MODELS ---
+        function rebuild3DScene() {
+            clearModelGroup();
+            const k = parseFloat(state.param);
+            const step = state.highlightStep;
+
+            if (state.qIndex === 0) {
+                // =========================================================
+                // MODEL 1: PYRAMID S.ABCD & PARALLEL PLANE (MNP)
+                // =========================================================
+                const S = new THREE.Vector3(-0.6, 5.2, -0.4);
+                const A = new THREE.Vector3(-3.2, 0, -2.4);
+                const B = new THREE.Vector3(-3.2, 0, 2.4);
+                const C = new THREE.Vector3(3.2, 0, 2.4);
+                const D = new THREE.Vector3(3.2, 0, -2.4);
+
+                // Base (ABCD)
+                addPolygonSurface([A, B, C, D], 0x0284c7, 0.24);
+                addSegment(A, B, 0xef4444, step === 1 ? 0.08 : 0.05); // AB highlighted in step 1
+                addSegment(B, C, 0x10b981, step === 2 ? 0.08 : 0.05); // BC highlighted in step 2
+                addSegment(C, D, 0x38bdf8, 0.04);
+                addSegment(D, A, 0x38bdf8, 0.04, true);
+
+                // Lateral edges
+                addSegment(S, A, 0x64748b, 0.035, true);
+                addSegment(S, B, 0x94a3b8, 0.04);
+                addSegment(S, C, 0x94a3b8, 0.04);
+                addSegment(S, D, 0x94a3b8, 0.04);
+
+                // Section points M, N, P, Q at ratio k from S
+                const M = new THREE.Vector3().lerpVectors(S, A, k);
+                const N = new THREE.Vector3().lerpVectors(S, B, k);
+                const P = new THREE.Vector3().lerpVectors(S, C, k);
+                const Q = new THREE.Vector3().lerpVectors(S, D, k);
+
+                addPolygonSurface([M, N, P, Q], 0xa855f7, step === 3 ? 0.48 : 0.32);
+                addSegment(M, N, 0xef4444, step === 1 ? 0.085 : 0.06);
+                addSegment(N, P, 0x10b981, step === 2 ? 0.085 : 0.06);
+                addSegment(P, Q, 0xc084fc, 0.045);
+                addSegment(Q, M, 0xc084fc, 0.045, true);
+
+                [S, A, B, C, D].forEach(v => addVertexSphere(v, 0x38bdf8, 0.12));
+                [M, N, P, Q].forEach(v => addVertexSphere(v, 0xf59e0b, 0.14));
+
+                registerLabel("S", S.clone().add(new THREE.Vector3(0, 0.35, 0)), "bg-sky-600/90 text-white border-sky-300/40");
+                registerLabel("A", A.clone().add(new THREE.Vector3(-0.35, 0, -0.2)));
+                registerLabel("B", B.clone().add(new THREE.Vector3(-0.35, 0, 0.25)));
+                registerLabel("C", C.clone().add(new THREE.Vector3(0.35, 0, 0.25)));
+                registerLabel("D", D.clone().add(new THREE.Vector3(0.35, 0, -0.2)));
+
+                registerLabel("M", M.clone().add(new THREE.Vector3(-0.4, 0.15, 0)), "bg-amber-500 text-slate-950 border-white");
+                registerLabel("N", N.clone().add(new THREE.Vector3(-0.4, 0.15, 0.2)), "bg-amber-500 text-slate-950 border-white");
+                registerLabel("P", P.clone().add(new THREE.Vector3(0.4, 0.15, 0.2)), "bg-amber-500 text-slate-950 border-white");
+                registerLabel("Q", Q.clone().add(new THREE.Vector3(0.4, 0.15, -0.2)), "bg-purple-600/90 text-white border-purple-300/40");
+                registerLabel("(MNP) // (ABCD)", new THREE.Vector3().addVectors(M, P).multiplyScalar(0.5).add(new THREE.Vector3(0, 0.35, 0)), "bg-purple-600/95 text-white border-purple-200");
+            }
+            else if (state.qIndex === 1) {
+                // =========================================================
+                // MODEL 2: TRAPEZOID BASE PYRAMID S.ABCD & SECTION (α) // (SBC)
+                // =========================================================
+                const S = new THREE.Vector3(0, 5.2, 0.8);
+                // Trapezoid ABCD: AD // BC, AD = 2 BC
+                const A = new THREE.Vector3(-4.0, 0, -2.2);
+                const D = new THREE.Vector3(4.0, 0, -2.2);
+                const B = new THREE.Vector3(-2.0, 0, 2.2);
+                const C = new THREE.Vector3(2.0, 0, 2.2);
+
+                addPolygonSurface([A, B, C, D], 0x1e293b, 0.45);
+                // Highlighted reference plane (SBC) in Sky Blue
+                addPolygonSurface([S, B, C], 0x0284c7, 0.34, 0x38bdf8);
+
+                addSegment(A, B, 0x94a3b8, 0.045);
+                addSegment(D, C, 0x94a3b8, 0.045);
+                addSegment(D, A, 0x38bdf8, 0.045, true);
+                addSegment(S, A, 0x64748b, 0.04, true);
+                addSegment(S, D, 0x94a3b8, 0.045);
+
+                // Point M on AB at ratio k from A to B
+                const M = new THREE.Vector3().lerpVectors(A, B, k);
+                const N = new THREE.Vector3().lerpVectors(D, C, k); // MN // BC
+                const Q = new THREE.Vector3().lerpVectors(A, S, k); // MQ // SB
+                const P = new THREE.Vector3().lerpVectors(D, S, k); // NP // SC
+
+                // Trapezoid Section MNPQ
+                addPolygonSurface([M, N, P, Q], 0xa855f7, 0.42);
+                addSegment(M, N, 0xef4444, step === 1 ? 0.085 : 0.06); // MN // BC
+                addSegment(M, Q, 0x10b981, step === 1 ? 0.085 : 0.06); // MQ // SB
+                addSegment(N, P, 0x10b981, step === 2 ? 0.085 : 0.06); // NP // SC
+                addSegment(P, Q, 0xf59e0b, step === 3 ? 0.085 : 0.06); // PQ // AD
+
+                [S, A, B, C, D].forEach(v => addVertexSphere(v, 0x38bdf8, 0.12));
+                [M, N, P, Q].forEach(v => addVertexSphere(v, 0xf59e0b, 0.14));
+
+                registerLabel("S", S.clone().add(new THREE.Vector3(0, 0.35, 0)), "bg-sky-600/90 text-white border-sky-300/40");
+                registerLabel("A", A.clone().add(new THREE.Vector3(-0.35, 0, -0.2)));
+                registerLabel("D", D.clone().add(new THREE.Vector3(0.35, 0, -0.2)));
+                registerLabel("B", B.clone().add(new THREE.Vector3(-0.35, 0, 0.25)));
+                registerLabel("C", C.clone().add(new THREE.Vector3(0.35, 0, 0.25)));
+                registerLabel("(SBC)", new THREE.Vector3(0, 2.2, 1.7), "bg-sky-600/95 text-white border-sky-200");
+
+                registerLabel("M", M.clone().add(new THREE.Vector3(-0.4, 0.15, 0.1)), "bg-amber-500 text-slate-950 border-white");
+                registerLabel("N", N.clone().add(new THREE.Vector3(0.4, 0.15, 0.1)), "bg-amber-500 text-slate-950 border-white");
+                registerLabel("P", P.clone().add(new THREE.Vector3(0.4, 0.2, -0.1)), "bg-amber-500 text-slate-950 border-white");
+                registerLabel("Q", Q.clone().add(new THREE.Vector3(-0.4, 0.2, -0.1)), "bg-amber-500 text-slate-950 border-white");
+                registerLabel("Thiết diện hình thang MNPQ", new THREE.Vector3().addVectors(Q, N).multiplyScalar(0.5).add(new THREE.Vector3(0, 0.4, 0)), "bg-purple-600/95 text-white border-purple-200");
+            }
+            else if (state.qIndex === 2) {
+                // =========================================================
+                // MODEL 3: THALES THEOREM WITH 3 PARALLEL PLANES (P) // (Q) // (R)
+                // =========================================================
+                const H = 5.0;
+                const yQ = H * (1 - k); // k = AB / AC from top plane (P)
+
+                const makeHorizPlane = (y, col, border) => {
+                    const p1 = new THREE.Vector3(-5.5, y, -4.0);
+                    const p2 = new THREE.Vector3(-5.5, y, 4.0);
+                    const p3 = new THREE.Vector3(5.5, y, 4.0);
+                    const p4 = new THREE.Vector3(5.5, y, -4.0);
+                    addPolygonSurface([p1, p2, p3, p4], col, 0.25, border);
+                };
+
+                makeHorizPlane(H, 0x8b5cf6, 0xc084fc);    // Top (P)
+                makeHorizPlane(yQ, 0x0284c7, 0x38bdf8);   // Middle (Q)
+                makeHorizPlane(0, 0x14b8a6, 0x5eead4);    // Bottom (R)
+
+                // Transversal d (Red)
+                const A = new THREE.Vector3(-2.6, H, -1.5);
+                const C = new THREE.Vector3(-1.0, 0, 2.0);
+                const B = new THREE.Vector3().lerpVectors(A, C, k);
+                const dirD = new THREE.Vector3().subVectors(A, C).normalize();
+
+                addSegment(C.clone().addScaledVector(dirD, -0.9), A.clone().addScaledVector(dirD, 0.9), 0xef4444, 0.065);
+
+                // Transversal d' (Emerald)
+                const Ap = new THREE.Vector3(2.4, H, 1.8);
+                const Cp = new THREE.Vector3(1.2, 0, -1.9);
+                const Bp = new THREE.Vector3().lerpVectors(Ap, Cp, k);
+                const dirDp = new THREE.Vector3().subVectors(Ap, Cp).normalize();
+
+                addSegment(Cp.clone().addScaledVector(dirDp, -0.9), Ap.clone().addScaledVector(dirDp, 0.9), 0x10b981, 0.065);
+
+                [A, B, C].forEach(p => addVertexSphere(p, 0xef4444, 0.15));
+                [Ap, Bp, Cp].forEach(p => addVertexSphere(p, 0x10b981, 0.15));
+
+                registerLabel("(P)", new THREE.Vector3(-5.0, H + 0.2, -3.5), "bg-purple-600/90 text-white border-purple-300/40");
+                registerLabel("(Q)", new THREE.Vector3(-5.0, yQ + 0.2, -3.5), "bg-sky-600/90 text-white border-sky-300/40");
+                registerLabel("(R)", new THREE.Vector3(-5.0, 0.2, -3.5), "bg-teal-600/90 text-white border-teal-300/40");
+
+                registerLabel("d", A.clone().addScaledVector(dirD, 0.75).add(new THREE.Vector3(-0.3, 0.15, 0)), "bg-red-600 text-white border-red-200");
+                registerLabel("d'", Ap.clone().addScaledVector(dirDp, 0.75).add(new THREE.Vector3(0.3, 0.15, 0)), "bg-emerald-600 text-white border-emerald-200");
+
+                registerLabel("A", A.clone().add(new THREE.Vector3(-0.4, 0.2, 0)), "bg-red-600/90 text-white");
+                registerLabel("B", B.clone().add(new THREE.Vector3(-0.4, 0.2, 0)), "bg-red-600/90 text-white");
+                registerLabel("C", C.clone().add(new THREE.Vector3(-0.4, 0.2, 0)), "bg-red-600/90 text-white");
+
+                registerLabel("A'", Ap.clone().add(new THREE.Vector3(0.4, 0.2, 0)), "bg-emerald-600/90 text-white");
+                registerLabel("B'", Bp.clone().add(new THREE.Vector3(0.4, 0.2, 0)), "bg-emerald-600/90 text-white");
+                registerLabel("C'", Cp.clone().add(new THREE.Vector3(0.4, 0.2, 0)), "bg-emerald-600/90 text-white");
+            }
+            else if (state.qIndex === 3) {
+                // =========================================================
+                // MODEL 4: PARALLELEPIPED ABCD.A'B'C'D' & (BDA') // (B'D'C)
+                // =========================================================
+                const sx = new THREE.Vector3(0.9, 4.4, 0.6); // Slant vector AA'
+                const A = new THREE.Vector3(-3.0, 0, -2.0);
+                const B = new THREE.Vector3(-3.0, 0, 2.0);
+                const C = new THREE.Vector3(2.4, 0, 2.0);
+                const D = new THREE.Vector3(2.4, 0, -2.0);
+
+                const Ap = A.clone().add(sx);
+                const Bp = B.clone().add(sx);
+                const Cp = C.clone().add(sx);
+                const Dp = D.clone().add(sx);
+
+                // Prism wireframe
+                addSegment(A, B, 0x64748b, 0.04);
+                addSegment(B, C, 0x64748b, 0.04);
+                addSegment(C, D, 0x64748b, 0.04);
+                addSegment(D, A, 0x475569, 0.035, true);
+
+                addSegment(Ap, Bp, 0x64748b, 0.04);
+                addSegment(Bp, Cp, 0x64748b, 0.04);
+                addSegment(Cp, Dp, 0x64748b, 0.04);
+                addSegment(Dp, Ap, 0x64748b, 0.04);
+
+                addSegment(A, Ap, 0x475569, 0.035, true);
+                addSegment(B, Bp, 0x64748b, 0.04);
+                addSegment(C, Cp, 0x64748b, 0.04);
+                addSegment(D, Dp, 0x64748b, 0.04);
+
+                // Diagonal AC' (dashed)
+                addSegment(A, Cp, 0xf59e0b, 0.035, true);
+
+                const op = 0.22 + k * 0.35;
+                // Plane (BDA') in Red/Rose
+                addPolygonSurface([B, D, Ap], 0xef4444, op);
+                addSegment(B, D, 0xef4444, step === 1 ? 0.085 : 0.06);
+                addSegment(Ap, B, 0xef4444, step === 2 ? 0.085 : 0.06);
+                addSegment(Ap, D, 0xef4444, 0.055);
+
+                // Plane (B'D'C) in Emerald
+                addPolygonSurface([Bp, Dp, C], 0x10b981, op);
+                addSegment(Bp, Dp, 0x10b981, step === 1 ? 0.085 : 0.06);
+                addSegment(Dp, C, 0x10b981, step === 2 ? 0.085 : 0.06);
+                addSegment(Bp, C, 0x10b981, 0.055);
+
+                [A, B, C, D, Ap, Bp, Cp, Dp].forEach(v => addVertexSphere(v, 0x38bdf8, 0.12));
+
+                registerLabel("A", A.clone().add(new THREE.Vector3(-0.3, -0.1, -0.2)));
+                registerLabel("B", B.clone().add(new THREE.Vector3(-0.3, -0.1, 0.2)));
+                registerLabel("C", C.clone().add(new THREE.Vector3(0.3, -0.1, 0.2)));
+                registerLabel("D", D.clone().add(new THREE.Vector3(0.3, -0.1, -0.2)));
+
+                registerLabel("A'", Ap.clone().add(new THREE.Vector3(-0.3, 0.25, -0.2)));
+                registerLabel("B'", Bp.clone().add(new THREE.Vector3(-0.3, 0.25, 0.2)));
+                registerLabel("C'", Cp.clone().add(new THREE.Vector3(0.3, 0.25, 0.2)));
+                registerLabel("D'", Dp.clone().add(new THREE.Vector3(0.3, 0.25, -0.2)));
+
+                const center1 = new THREE.Vector3().add(B).add(D).add(Ap).divideScalar(3);
+                const center2 = new THREE.Vector3().add(Bp).add(Dp).add(C).divideScalar(3);
+                registerLabel("(BDA')", center1, "bg-red-600/95 text-white border-red-200");
+                registerLabel("(B'D'C)", center2, "bg-emerald-600/95 text-white border-emerald-200");
+            }
+
+            rebuildLabelDOM();
+        }
+
+        function rebuildLabelDOM() {
+            labelsContainer.innerHTML = '';
+            activeLabels.forEach((item, idx) => {
+                const div = document.createElement('div');
+                div.id = `dyn-label-${idx}`;
+                div.className = `label-3d px-2 py-0.5 rounded text-xs border shadow-lg ${item.bgClass}`;
+                div.innerText = item.text;
+                labelsContainer.appendChild(div);
+            });
+        }
+
+        function updateScreenLabels() {
+            if (!tempVec || !camera) return;
+            const widthHalf = container.clientWidth / 2;
+            const heightHalf = container.clientHeight / 2;
+
+            activeLabels.forEach((item, idx) => {
+                const el = document.getElementById(`dyn-label-${idx}`);
+                if (!el) return;
+
+                tempVec.copy(item.pos);
+                tempVec.project(camera);
+
+                if (tempVec.z > 1) {
+                    el.style.opacity = '0';
+                    return;
+                }
+
+                const x = (tempVec.x * widthHalf) + widthHalf;
+                const y = (-(tempVec.y * heightHalf)) + heightHalf;
+                el.style.transform = `translate(-50%, -50%) translate(${x}px, ${y}px)`;
+                el.style.opacity = '1';
+            });
+        }
+
+        // --- RENDER QUESTION UI, MCQ, STEP SOLUTIONS & EXTENSION ---
+        function loadQuestionUI(index) {
+            state.qIndex = index;
+            state.highlightStep = 0;
+            const q = QUESTIONS[index];
+            state.param = q.sliderDefault;
+
+            // Update active question button
+            document.querySelectorAll('.q-select-btn').forEach((btn, i) => {
+                if (i === index) {
+                    btn.classList.add('active', 'ring-2', 'ring-sky-400');
+                } else {
+                    btn.classList.remove('active', 'ring-2', 'ring-sky-400');
+                }
+            });
+
+            // Reset step buttons
+            document.querySelectorAll('.step-btn').forEach(b => {
+                const s = parseInt(b.getAttribute('data-step'), 10);
+                b.className = s === 0
+                    ? "step-btn py-1 px-1 rounded-lg bg-sky-500 text-slate-950 font-extrabold transition"
+                    : "step-btn py-1 px-1 rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 transition";
+            });
+
+            // Slider setup
+            const sliderEl = document.getElementById('slider-param');
+            sliderEl.min = q.sliderMin;
+            sliderEl.max = q.sliderMax;
+            sliderEl.step = q.sliderStep;
+            sliderEl.value = q.sliderDefault;
+            document.getElementById('slider-label').innerHTML = q.sliderLabel;
+            document.getElementById('slider-val').innerText = q.formatSlider(q.sliderDefault);
+
+            // HUD & Problem
+            document.getElementById('hud-title').innerText = q.hudTitle;
+            safeRenderKaTeX(q.hudLatex, 'hud-formula');
+            document.getElementById('problem-title').innerHTML = `<i class="fa-solid fa-file-lines"></i> ${q.title}`;
+            document.getElementById('problem-tag').innerText = q.tag;
+            document.getElementById('problem-text').innerHTML = q.problemHTML;
+
+            // Main MCQ
+            const mcqBox = document.getElementById('mcq-container');
+            const mcqFeedback = document.getElementById('mcq-feedback');
+            mcqFeedback.classList.add('hidden');
+            mcqBox.innerHTML = q.options.map(opt => `
+                <button data-key="${opt.key}" class="main-mcq-btn p-2 rounded-lg bg-slate-950/70 hover:bg-slate-800 border border-slate-700 text-left transition flex items-center justify-between">
+                    <span><strong>${opt.key}.</strong> ${opt.text}</span>
+                    <span class="mcq-icon"></span>
+                </button>
+            `).join('');
+
+            document.querySelectorAll('.main-mcq-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const chosen = btn.getAttribute('data-key');
+                    mcqFeedback.classList.remove('hidden');
+
+                    document.querySelectorAll('.main-mcq-btn').forEach(b => {
+                        b.classList.remove('border-emerald-500', 'bg-emerald-950/50', 'border-red-500', 'bg-red-950/50');
+                        b.querySelector('.mcq-icon').innerHTML = '';
+                    });
+
+                    if (chosen === q.correct) {
+                        btn.classList.add('border-emerald-500', 'bg-emerald-950/50');
+                        btn.querySelector('.mcq-icon').innerHTML = `<i class="fa-solid fa-circle-check text-emerald-400"></i>`;
+                        mcqFeedback.className = "text-xs p-2.5 rounded-lg border border-emerald-500/40 bg-emerald-950/40 text-emerald-200";
+                        mcqFeedback.innerHTML = `<strong class="text-emerald-400"><i class="fa-solid fa-check-circle mr-1"></i> Chính xác!</strong> ${q.feedbackCorrect}`;
+
+                        state.solvedSet.add(q.id);
+                        document.getElementById('score-display').innerText = `${state.solvedSet.size} / ${QUESTIONS.length}`;
+                        const badgeEl = document.getElementById(`badge-q${q.id}`);
+                        if (badgeEl) badgeEl.innerHTML = `<i class="fa-solid fa-circle-check text-emerald-400"></i>`;
+
+                        // Auto-reveal detailed solution when answered correctly
+                        document.getElementById('solution-wrapper').classList.remove('hidden');
+                        document.getElementById('btn-toggle-solution').innerHTML = `<i class="fa-solid fa-eye-slash mr-1"></i> Ẩn lời giải`;
+                    } else {
+                        btn.classList.add('border-red-500', 'bg-red-950/50');
+                        btn.querySelector('.mcq-icon').innerHTML = `<i class="fa-solid fa-circle-xmark text-red-400"></i>`;
+                        mcqFeedback.className = "text-xs p-2.5 rounded-lg border border-red-500/40 bg-red-950/40 text-red-200";
+                        mcqFeedback.innerHTML = `<strong class="text-red-400"><i class="fa-solid fa-triangle-exclamation mr-1"></i> Chưa đúng!</strong> ${q.feedbackWrong}`;
+                    }
+                    renderMathInPage();
+                });
+            });
+
+            // Collapse solution initially for fresh practice
+            document.getElementById('solution-wrapper').classList.add('hidden');
+            document.getElementById('btn-toggle-solution').innerHTML = `<i class="fa-solid fa-eye mr-1"></i> Hiện lời giải`;
+            renderSolutionSteps();
+
+            // Extension Question
+            document.getElementById('extension-question').innerHTML = q.extQuestion;
+            const extBox = document.getElementById('extension-options');
+            const extFeedback = document.getElementById('extension-feedback');
+            extFeedback.classList.add('hidden');
+
+            extBox.innerHTML = q.extOptions.map(opt => `
+                <button data-key="${opt.key}" class="ext-mcq-btn p-2 rounded-lg bg-slate-950/70 hover:bg-slate-800 border border-slate-700 text-left transition flex items-center justify-between">
+                    <span><strong>${opt.key}.</strong> ${opt.text}</span>
+                    <span class="ext-icon"></span>
+                </button>
+            `).join('');
+
+            document.querySelectorAll('.ext-mcq-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const chosen = btn.getAttribute('data-key');
+                    extFeedback.classList.remove('hidden');
+
+                    document.querySelectorAll('.ext-mcq-btn').forEach(b => {
+                        b.classList.remove('border-emerald-500', 'bg-emerald-950/50', 'border-red-500', 'bg-red-950/50');
+                        b.querySelector('.ext-icon').innerHTML = '';
+                    });
+
+                    if (chosen === q.extCorrect) {
+                        btn.classList.add('border-emerald-500', 'bg-emerald-950/50');
+                        btn.querySelector('.ext-icon').innerHTML = `<i class="fa-solid fa-circle-check text-emerald-400"></i>`;
+                        extFeedback.className = "text-xs p-2.5 rounded-lg border border-emerald-500/40 bg-emerald-950/40 text-emerald-200";
+                        extFeedback.innerHTML = `<strong class="text-emerald-400"><i class="fa-solid fa-star mr-1"></i> Tuyệt vời!</strong> ${q.extExplanation}`;
+                    } else {
+                        btn.classList.add('border-red-500', 'bg-red-950/50');
+                        btn.querySelector('.ext-icon').innerHTML = `<i class="fa-solid fa-circle-xmark text-red-400"></i>`;
+                        extFeedback.className = "text-xs p-2.5 rounded-lg border border-red-500/40 bg-red-950/40 text-red-200";
+                        extFeedback.innerHTML = `<strong class="text-red-400"><i class="fa-solid fa-rotate-right mr-1"></i> Thử lại nhé!</strong> Gợi ý: ${q.extExplanation}`;
+                    }
+                    renderMathInPage();
+                });
+            });
+
+            rebuild3DScene();
+            renderMathInPage();
+        }
+
+        function renderSolutionSteps() {
+            const q = QUESTIONS[state.qIndex];
+            const s = state.highlightStep;
+            const containerEl = document.getElementById('solution-content');
+
+            containerEl.innerHTML = q.steps.map((st, idx) => {
+                const stepNum = idx + 1;
+                const active = (s === 0 || s === stepNum);
+                return `
+                    <div class="p-2.5 rounded-lg border transition-all ${
+                        active ? `bg-slate-950/80 ${st.border} opacity-100` : 'bg-slate-950/30 border-slate-800/50 opacity-40'
+                    }">
+                        <div class="font-bold ${st.color} mb-1">${st.title}</div>
+                        <div>${st.html}</div>
+                    </div>
+                `;
+            }).join('');
+
+            renderMathInPage();
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            if (controls) {
+                controls.autoRotate = state.autoRotate;
+                controls.autoRotateSpeed = 1.8;
+                controls.update();
+            }
+            renderer.render(scene, camera);
+            updateScreenLabels();
+        }
+
+        function onWindowResize() {
+            if (!container || !camera || !renderer) return;
+            camera.aspect = container.clientWidth / container.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(container.clientWidth, container.clientHeight);
+        }
+
+        function setupUIEventListeners() {
+            const mobileBtn3D = document.getElementById('mobile-tab-3d');
+            const mobileBtnMath = document.getElementById('mobile-tab-math');
+            const sidebar = document.getElementById('sidebar-panel');
+            const viewport = document.getElementById('viewport-panel');
+
+            if (mobileBtn3D && mobileBtnMath) {
+                mobileBtn3D.addEventListener('click', () => {
+                    mobileBtn3D.className = "px-2.5 py-1 rounded-md bg-amber-400 text-slate-950 font-bold transition";
+                    mobileBtnMath.className = "px-2.5 py-1 rounded-md hover:bg-slate-800 transition";
+                    sidebar.classList.add('hidden');
+                    viewport.classList.remove('hidden');
+                    onWindowResize();
+                });
+
+                mobileBtnMath.addEventListener('click', () => {
+                    mobileBtnMath.className = "px-2.5 py-1 rounded-md bg-amber-400 text-slate-950 font-bold transition";
+                    mobileBtn3D.className = "px-2.5 py-1 rounded-md hover:bg-slate-800 transition";
+                    sidebar.classList.remove('hidden');
+                    viewport.classList.add('hidden');
+                });
+            }
+
+            // Question selection buttons
+            document.querySelectorAll('.q-select-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const idx = parseInt(btn.getAttribute('data-q'), 10);
+                    loadQuestionUI(idx);
+                });
+            });
+
+            // Interactive 3D Parameter Slider
+            document.getElementById('slider-param').addEventListener('input', (e) => {
+                state.param = parseFloat(e.target.value);
+                const q = QUESTIONS[state.qIndex];
+                document.getElementById('slider-val').innerText = q.formatSlider(state.param);
+                rebuild3DScene();
+            });
+
+            // Auto-rotate toggle
+            document.getElementById('toggle-autorotate').addEventListener('change', (e) => {
+                state.autoRotate = e.target.checked;
+            });
+
+            // Step highlight buttons
+            document.querySelectorAll('.step-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    state.highlightStep = parseInt(btn.getAttribute('data-step'), 10);
+                    document.querySelectorAll('.step-btn').forEach(b => {
+                        b.className = "step-btn py-1 px-1 rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 transition";
+                    });
+                    btn.className = "step-btn py-1 px-1 rounded-lg bg-sky-500 text-slate-950 font-extrabold transition";
+
+                    // Open solution panel if user clicks a specific step
+                    document.getElementById('solution-wrapper').classList.remove('hidden');
+                    document.getElementById('btn-toggle-solution').innerHTML = `<i class="fa-solid fa-eye-slash mr-1"></i> Ẩn lời giải`;
+
+                    renderSolutionSteps();
+                    rebuild3DScene();
+                });
+            });
+
+            // Toggle Solution Visibility
+            document.getElementById('btn-toggle-solution').addEventListener('click', () => {
+                const wrapper = document.getElementById('solution-wrapper');
+                const btn = document.getElementById('btn-toggle-solution');
+                const isHidden = wrapper.classList.contains('hidden');
+                if (isHidden) {
+                    wrapper.classList.remove('hidden');
+                    btn.innerHTML = `<i class="fa-solid fa-eye-slash mr-1"></i> Ẩn lời giải`;
+                } else {
+                    wrapper.classList.add('hidden');
+                    btn.innerHTML = `<i class="fa-solid fa-eye mr-1"></i> Hiện lời giải`;
+                }
+            });
+
+            // Reset Camera
+            document.getElementById('btn-reset-cam').addEventListener('click', () => {
+                const startPos = camera.position.clone();
+                const startLook = controls.target.clone();
+                const targetPos = new THREE.Vector3(11, 8.5, 12.5);
+                const targetLook = new THREE.Vector3(0, 2.0, 0);
+                const startTime = performance.now();
+
+                function step(now) {
+                    const progress = Math.min((now - startTime) / 600, 1);
+                    const ease = 1 - Math.pow(1 - progress, 3);
+                    camera.position.lerpVectors(startPos, targetPos, ease);
+                    controls.target.lerpVectors(startLook, targetLook, ease);
+                    controls.update();
+                    if (progress < 1) requestAnimationFrame(step);
+                }
+                requestAnimationFrame(step);
+            });
+
+            // Fullscreen
+            document.getElementById('btn-fullscreen').addEventListener('click', () => {
+                try {
+                    if (!document.fullscreenElement) {
+                        document.documentElement.requestFullscreen().catch(() => {});
+                    } else {
+                        document.exitFullscreen().catch(() => {});
+                    }
+                } catch (err) {}
+            });
+        }
+
+        window.onload = function() {
+            init3D();
+            setupUIEventListeners();
+            loadQuestionUI(0);
+            animate();
+        };
+    </script>
+</body>
+</html>
