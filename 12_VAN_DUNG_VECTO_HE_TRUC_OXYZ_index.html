@@ -1,0 +1,1203 @@
+<!DOCTYPE html>
+<html lang="vi" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Học Toán Cùng Thầy Tôn Tú - Tọa Độ Vectơ Độ Dịch Chuyển Máy Bay (Oxyz)</title>
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0f9ff',
+                            500: '#0284c7',
+                            600: '#0369a1',
+                            700: '#075985',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Fira+Code:wght@400;600&display=swap" rel="stylesheet">
+    
+    <!-- Three.js & OrbitControls -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <!-- KaTeX CDN & Auto-render extension -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js"></script>
+
+    <style>
+        * {
+            touch-action: manipulation;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            user-select: none;
+            overflow: hidden;
+            background-color: #070b14;
+            margin: 0;
+            padding: 0;
+        }
+        .math-font {
+            font-family: 'STIX Two Math', 'Times New Roman', serif;
+            font-style: italic;
+        }
+        /* Custom Scrollbar */
+        .custom-scroll::-webkit-scrollbar {
+            width: 5px;
+        }
+        .custom-scroll::-webkit-scrollbar-track {
+            background: rgba(15, 23, 42, 0.85);
+        }
+        .custom-scroll::-webkit-scrollbar-thumb {
+            background: rgba(51, 65, 85, 0.85);
+            border-radius: 4px;
+        }
+        .custom-scroll::-webkit-scrollbar-thumb:hover {
+            background: rgba(100, 116, 139, 1);
+        }
+        /* 3D Label Overlays */
+        .label-3d {
+            position: absolute;
+            pointer-events: none;
+            transition: opacity 0.12s ease-out;
+            transform: translate(-50%, -50%);
+            white-space: nowrap;
+            font-weight: 700;
+            text-shadow: 0 2px 5px rgba(0,0,0,0.95);
+            z-index: 10;
+        }
+        /* Glassmorphism Effect */
+        .glass-card {
+            background: rgba(15, 23, 42, 0.88);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .katex {
+            font-size: 0.98em;
+        }
+        #canvas-container canvas {
+            touch-action: none;
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 h-screen w-screen flex flex-col overflow-hidden">
+
+    <!-- ================================================================= -->
+    <!-- TOP FIXED BRAND HEADER BANNER                                      -->
+    <!-- ================================================================= -->
+    <header class="w-full bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 text-slate-950 font-black py-2.5 px-4 shadow-xl border-b border-amber-300 text-sm md:text-base tracking-wider uppercase flex items-center justify-between z-30 shrink-0">
+        <div class="flex items-center gap-2">
+            <i class="fa-solid fa-plane-departure text-lg md:text-xl"></i>
+            <span class="font-extrabold tracking-wide">HỌC TOÁN CÙNG THẦY TÔN TÚ</span>
+        </div>
+        
+        <!-- Mobile View Switcher Buttons -->
+        <div class="flex md:hidden items-center bg-slate-950/40 rounded-lg p-0.5 text-xs text-white">
+            <button id="mobile-tab-3d" class="px-2.5 py-1 rounded-md bg-amber-400 text-slate-950 font-bold transition">
+                <i class="fa-solid fa-cube mr-1"></i> Mô phỏng 3D
+            </button>
+            <button id="mobile-tab-math" class="px-2.5 py-1 rounded-md hover:bg-slate-800 transition">
+                <i class="fa-solid fa-book-open mr-1"></i> Đề & Lời giải
+            </button>
+        </div>
+    </header>
+
+    <!-- ================================================================= -->
+    <!-- MAIN CONTENT CONTAINER (SIDEBAR LEFT + 3D VIEWPORT RIGHT)         -->
+    <!-- ================================================================= -->
+    <div class="flex-1 w-full flex flex-col md:flex-row overflow-hidden relative">
+        
+        <!-- SIDEBAR PANEL -->
+        <aside id="sidebar-panel" class="custom-scroll w-full md:w-[430px] lg:w-[465px] shrink-0 h-full flex flex-col bg-slate-900/95 border-r border-slate-800 z-20 shadow-2xl overflow-y-auto p-3.5 gap-3 transition-all duration-300 hidden md:flex">
+            
+            <!-- HEADER BADGE -->
+            <div class="glass-card p-3 rounded-xl flex items-center gap-3 border border-sky-500/30 shadow-lg shrink-0">
+                <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-sky-500 via-blue-600 to-indigo-700 flex items-center justify-center text-white text-lg font-black shadow-md shrink-0">
+                    <i class="fa-solid fa-compass"></i>
+                </div>
+                <div>
+                    <h1 class="font-extrabold text-sm md:text-base leading-tight tracking-wide text-white">
+                        TỌA ĐỘ VECTƠ ĐỘ DỊCH CHUYỂN MÁY BAY
+                    </h1>
+                    <p class="text-[11px] text-sky-400 font-medium mt-0.5">
+                        Hình học không gian $Oxyz$ • Toán 12 (Kết nối tri thức)
+                    </p>
+                </div>
+            </div>
+
+            <!-- SECTION 1: CHỌN TÌNH HUỐNG BÀI TOÁN -->
+            <div class="space-y-1.5 shrink-0">
+                <div class="text-[11px] font-bold text-slate-400 uppercase tracking-wider flex items-center justify-between">
+                    <span><i class="fa-solid fa-route text-sky-400 mr-1"></i> Tình huống bài toán</span>
+                    <span class="text-[10px] text-slate-500 font-normal">Chuyển đổi nhanh</span>
+                </div>
+                
+                <div class="grid grid-cols-2 gap-2 text-xs">
+                    <button id="btn-mode-south" class="mode-btn p-2.5 rounded-xl border border-emerald-500/50 bg-emerald-950/40 hover:bg-emerald-900/40 text-left transition flex flex-col justify-between active ring-2 ring-emerald-400">
+                        <div class="font-bold text-emerald-400 flex items-center justify-between">
+                            <span>1. Hướng Nam</span>
+                            <i class="fa-solid fa-arrow-down text-xs"></i>
+                        </div>
+                        <div class="text-[11px] text-slate-300 mt-1">Bài toán gốc: Bay thẳng về phía Nam ($v = 890$ km/h)</div>
+                    </button>
+
+                    <button id="btn-mode-southeast" class="mode-btn p-2.5 rounded-xl border border-amber-500/40 bg-amber-950/30 hover:bg-amber-900/40 text-left transition flex flex-col justify-between">
+                        <div class="font-bold text-amber-400 flex items-center justify-between">
+                            <span>2. Hướng Đông Nam</span>
+                            <i class="fa-solid fa-location-arrow text-xs"></i>
+                        </div>
+                        <div class="text-[11px] text-slate-300 mt-1">Câu hỏi mở rộng: Bay theo hướng Đông Nam</div>
+                    </button>
+                </div>
+            </div>
+
+            <!-- SECTION 2: ĐIỀU KHIỂN MÔ PHỎNG BAY -->
+            <div class="glass-card p-3 rounded-xl border border-slate-800 space-y-2.5 shrink-0">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-bold text-slate-300 uppercase tracking-wider">
+                        <i class="fa-solid fa-sliders text-sky-400 mr-1"></i> Mô phỏng hành trình bay
+                    </span>
+                    <div class="flex items-center gap-1.5">
+                        <button id="btn-play-flight" class="text-[11px] px-2.5 py-1 rounded-lg bg-sky-600 hover:bg-sky-500 text-white font-bold transition flex items-center gap-1 shadow">
+                            <i class="fa-solid fa-play"></i> Bay thử
+                        </button>
+                        <button id="btn-reset-flight" class="text-[11px] px-2 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition" title="Đặt lại t = 0.5 giờ">
+                            <i class="fa-solid fa-rotate-left"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Time Progress Slider -->
+                <div class="space-y-1">
+                    <div class="flex justify-between text-xs">
+                        <span class="text-slate-300">Thời gian bay $t$ (từ $M$ đến $N$):</span>
+                        <span id="val-time" class="font-mono font-bold text-sky-400">0.50 giờ (30 phút)</span>
+                    </div>
+                    <input type="range" id="slider-time" min="0" max="0.5" step="0.01" value="0.5"
+                           class="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-sky-400">
+                </div>
+
+                <!-- Live Coordinates Readout -->
+                <div class="grid grid-cols-3 gap-1.5 pt-1 text-center font-mono text-xs">
+                    <div class="bg-slate-950/80 p-1.5 rounded-lg border border-red-500/30">
+                        <div class="text-[10px] text-slate-400">$\Delta x$ (Tây)</div>
+                        <div id="readout-dx" class="font-bold text-red-400">0</div>
+                    </div>
+                    <div class="bg-slate-950/80 p-1.5 rounded-lg border border-emerald-500/30">
+                        <div class="text-[10px] text-slate-400">$\Delta y$ (Nam)</div>
+                        <div id="readout-dy" class="font-bold text-emerald-400">+445</div>
+                    </div>
+                    <div class="bg-slate-950/80 p-1.5 rounded-lg border border-blue-500/30">
+                        <div class="text-[10px] text-slate-400">$\Delta z$ (Cao)</div>
+                        <div id="readout-dz" class="font-bold text-blue-400">0</div>
+                    </div>
+                </div>
+
+                <!-- Visual Toggles -->
+                <div class="flex items-center justify-between pt-1 text-xs text-slate-300 border-t border-slate-800/80">
+                    <label class="flex items-center gap-1.5 cursor-pointer">
+                        <input type="checkbox" id="toggle-projections" checked class="w-3.5 h-3.5 accent-amber-400 rounded">
+                        <span>Đường gióng tọa độ</span>
+                    </label>
+                    <label class="flex items-center gap-1.5 cursor-pointer">
+                        <input type="checkbox" id="toggle-compass" checked class="w-3.5 h-3.5 accent-sky-400 rounded">
+                        <span>La bàn Đông-Tây-Nam-Bắc</span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- SECTION 3: ĐỀ BÀI CHI TIẾT -->
+            <div class="glass-card rounded-xl p-3 border-l-4 border-sky-500 space-y-1.5 shrink-0">
+                <div class="text-xs font-extrabold text-sky-400 uppercase tracking-wide flex items-center gap-1.5">
+                    <i class="fa-solid fa-file-lines"></i> 1. ĐỀ BÀI
+                </div>
+                <div class="text-xs text-slate-200 leading-relaxed space-y-1.5">
+                    <p>Ta có hệ tọa độ $Oxyz$ được thiết lập như sau:</p>
+                    <ul class="list-disc pl-4 space-y-0.5 text-slate-300">
+                        <li>Gốc $O$ trùng với vị trí của trung tâm kiểm soát không lưu.</li>
+                        <li>Mặt phẳng $(Oxy)$ trùng với mặt đất.</li>
+                        <li>Trục <span class="text-red-400 font-semibold">$Ox$ hướng về phía Tây</span> (chiều âm hướng Đông).</li>
+                        <li>Trục <span class="text-emerald-400 font-semibold">$Oy$ hướng về phía Nam</span> (chiều âm hướng Bắc).</li>
+                        <li>Trục <span class="text-blue-400 font-semibold">$Oz$ hướng thẳng đứng lên trời</span>.</li>
+                    </ul>
+                    <p id="problem-statement-text" class="pt-1 font-medium text-white bg-slate-950/60 p-2 rounded-lg border border-slate-800">
+                        Một chiếc máy bay sau khi cất cánh và đạt độ cao nhất định thì bay theo <span class="text-emerald-400 font-bold">hướng Nam</span> với vận tốc không đổi $890\text{ km/h}$ trong nửa giờ ($t = \frac{1}{2}$ giờ).<br>
+                        <span class="text-amber-400 font-bold">Yêu cầu:</span> Xác định tọa độ của vectơ $\overrightarrow{MN}$ biểu diễn độ dịch chuyển của máy bay trong khoảng thời gian đó.
+                    </p>
+                </div>
+            </div>
+
+            <!-- SECTION 4: HƯỚNG DẪN GIẢI CHI TIẾT TỪNG BƯỚC -->
+            <div id="solution-card" class="glass-card rounded-xl p-3 border-l-4 border-emerald-500 space-y-2.5 shrink-0">
+                <div class="flex items-center justify-between">
+                    <div class="text-xs font-extrabold text-emerald-400 uppercase tracking-wide flex items-center gap-1.5">
+                        <i class="fa-solid fa-chalkboard-user"></i> 2. HƯỚNG DẪN GIẢI CHI TIẾT
+                    </div>
+                    <span class="text-[10px] px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-semibold">
+                        Từng bước
+                    </span>
+                </div>
+
+                <!-- Step Buttons -->
+                <div class="grid grid-cols-4 gap-1 text-[11px] font-bold">
+                    <button data-step="0" class="step-btn py-1.5 px-1 rounded-lg bg-emerald-500 text-slate-950 transition">Tất cả</button>
+                    <button data-step="1" class="step-btn py-1.5 px-1 rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 transition">Bước 1 ($\Delta x$)</button>
+                    <button data-step="2" class="step-btn py-1.5 px-1 rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 transition">Bước 2 ($\Delta y$)</button>
+                    <button data-step="3" class="step-btn py-1.5 px-1 rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 transition">Bước 3 ($\Delta z$)</button>
+                </div>
+
+                <!-- Solution Content Container (Rendered dynamically by mode) -->
+                <div id="solution-content" class="text-xs text-slate-200 leading-relaxed space-y-2.5"></div>
+            </div>
+
+            <!-- SECTION 5: CÂU HỎI TƯƠNG TỰ (HƯỚNG ĐÔNG NAM) -->
+            <div class="glass-card rounded-xl p-3.5 border-l-4 border-amber-500 space-y-2.5 shrink-0 bg-gradient-to-br from-amber-950/30 to-slate-900/90">
+                <div class="flex items-center justify-between">
+                    <div class="text-xs font-extrabold text-amber-400 uppercase tracking-wide flex items-center gap-1.5">
+                        <i class="fa-solid fa-lightbulb"></i> 3. CÂU HỎI TƯƠNG TỰ (LUYỆN TẬP)
+                    </div>
+                    <span class="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 font-bold">
+                        Thử thách
+                    </span>
+                </div>
+
+                <p class="text-xs text-slate-200 leading-relaxed">
+                    <span class="font-bold text-amber-300">Câu hỏi:</span> Cũng với vận tốc $890\text{ km/h}$ trong nửa giờ ở độ cao không đổi, nếu máy bay dịch chuyển theo <span class="text-amber-400 font-bold underline">hướng Đông Nam</span> (hợp với hướng Đông và hướng Nam góc $45^\circ$) thì tọa độ của vectơ độ dịch chuyển $\overrightarrow{MN}$ bằng bao nhiêu?
+                </p>
+
+                <!-- Interactive Multiple Choice for Students -->
+                <div class="grid grid-cols-1 gap-1.5 text-xs" id="quiz-options">
+                    <button data-ans="A" class="quiz-btn p-2 rounded-lg bg-slate-950/70 hover:bg-slate-800 border border-slate-700 text-left transition flex items-center justify-between">
+                        <span><strong>A.</strong> $\overrightarrow{MN} = \left(\dfrac{445\sqrt{2}}{2}; \; \dfrac{445\sqrt{2}}{2}; \; 0\right)$</span>
+                        <span class="quiz-icon"></span>
+                    </button>
+                    <button data-ans="B" class="quiz-btn p-2 rounded-lg bg-slate-950/70 hover:bg-slate-800 border border-slate-700 text-left transition flex items-center justify-between">
+                        <span><strong>B.</strong> $\overrightarrow{MN} = \left(-\dfrac{445\sqrt{2}}{2}; \; \dfrac{445\sqrt{2}}{2}; \; 0\right)$</span>
+                        <span class="quiz-icon"></span>
+                    </button>
+                    <button data-ans="C" class="quiz-btn p-2 rounded-lg bg-slate-950/70 hover:bg-slate-800 border border-slate-700 text-left transition flex items-center justify-between">
+                        <span><strong>C.</strong> $\overrightarrow{MN} = \left(-\dfrac{445\sqrt{2}}{2}; \; -\dfrac{445\sqrt{2}}{2}; \; 0\right)$</span>
+                        <span class="quiz-icon"></span>
+                    </button>
+                </div>
+
+                <!-- Feedback & Toggle 3D button -->
+                <div id="quiz-feedback" class="hidden text-xs p-2.5 rounded-lg border space-y-1.5"></div>
+
+                <button id="btn-switch-to-se" class="w-full py-2 px-3 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold text-xs transition flex items-center justify-center gap-1.5 shadow-lg">
+                    <i class="fa-solid fa-eye"></i> Xem mô phỏng 3D & Lời giải hướng Đông Nam
+                </button>
+            </div>
+
+        </aside>
+
+        <!-- RIGHT AREA: 3D VIEWPORT CONTAINER -->
+        <main id="viewport-panel" class="flex-1 h-full relative overflow-hidden bg-slate-950">
+
+            <!-- 3D WebGL Canvas -->
+            <div id="canvas-container" class="w-full h-full cursor-grab active:cursor-grabbing"></div>
+
+            <!-- Top-Left Floating Formula HUD -->
+            <div class="absolute top-3 left-3 z-20 pointer-events-none max-w-[92%] sm:max-w-md">
+                <div class="glass-card px-3.5 py-2.5 rounded-xl border border-sky-500/30 shadow-xl space-y-1">
+                    <div class="text-[11px] font-bold text-sky-400 uppercase tracking-wider flex items-center gap-1.5">
+                        <i class="fa-solid fa-vector-square"></i>
+                        <span id="hud-title">VECTƠ ĐỘ DỊCH CHUYỂN (HƯỚNG NAM)</span>
+                    </div>
+                    <div id="hud-formula" class="text-sm font-bold text-white"></div>
+                </div>
+            </div>
+
+            <!-- Dynamic 3D Floating Labels Overlay -->
+            <div id="labels-container" class="absolute inset-0 pointer-events-none overflow-hidden z-10">
+                <!-- Axes & Compass Labels -->
+                <div id="label-origin" class="label-3d px-2 py-0.5 rounded bg-slate-800/90 text-white text-xs border border-slate-500">
+                    O (Trạm KSKL)
+                </div>
+                <div id="label-axisX" class="label-3d px-2 py-0.5 rounded bg-red-600/90 text-white text-xs border border-red-300/40">
+                    x (Tây +)
+                </div>
+                <div id="label-axisX-neg" class="label-3d px-2 py-0.5 rounded bg-red-950/85 text-red-200 text-[11px] border border-red-400/30">
+                    Đông (-)
+                </div>
+                <div id="label-axisY" class="label-3d px-2 py-0.5 rounded bg-emerald-600/90 text-white text-xs border border-emerald-300/40">
+                    y (Nam +)
+                </div>
+                <div id="label-axisY-neg" class="label-3d px-2 py-0.5 rounded bg-emerald-950/85 text-emerald-200 text-[11px] border border-emerald-400/30">
+                    Bắc (-)
+                </div>
+                <div id="label-axisZ" class="label-3d px-2 py-0.5 rounded bg-blue-600/90 text-white text-xs border border-blue-300/40">
+                    z (Độ cao +)
+                </div>
+
+                <!-- Flight Points & Vector Labels -->
+                <div id="label-pointM" class="label-3d px-2 py-0.5 rounded-full bg-amber-400 text-slate-950 font-extrabold text-xs border border-white shadow-lg">
+                    M (t = 0)
+                </div>
+                <div id="label-pointN" class="label-3d px-2 py-0.5 rounded-full bg-sky-400 text-slate-950 font-extrabold text-xs border border-white shadow-lg">
+                    N (Máy bay)
+                </div>
+                <div id="label-vecMN" class="label-3d px-2.5 py-1 rounded-md bg-amber-500/95 text-slate-950 font-extrabold text-xs border border-white shadow-xl">
+                    $\overrightarrow{MN} = (0; 445; 0)$
+                </div>
+                <div id="label-compX" class="label-3d px-2 py-0.5 rounded bg-red-600/90 text-white text-[11px] border border-red-300/40 hidden">
+                    $\Delta x = -314.66$
+                </div>
+                <div id="label-compY" class="label-3d px-2 py-0.5 rounded bg-emerald-600/90 text-white text-[11px] border border-emerald-300/40 hidden">
+                    $\Delta y = +314.66$
+                </div>
+            </div>
+
+            <!-- Top Right Utility Buttons -->
+            <div class="absolute top-3 right-3 z-20 flex items-center gap-1.5 pointer-events-auto">
+                <button id="btn-reset-cam" class="p-2 rounded-xl glass-card text-slate-300 hover:text-white hover:bg-slate-800 transition text-xs shadow-lg" title="Đặt lại góc nhìn 3D">
+                    <i class="fa-solid fa-camera-rotate mr-1"></i> Góc nhìn chuẩn
+                </button>
+                <button id="btn-fullscreen" class="p-2 rounded-xl glass-card text-slate-300 hover:text-white hover:bg-slate-800 transition text-xs shadow-lg" title="Toàn màn hình">
+                    <i class="fa-solid fa-expand"></i>
+                </button>
+            </div>
+
+            <!-- Bottom Operation Instruction Bar -->
+            <div class="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 pointer-events-none w-[92%] md:w-auto">
+                <div class="glass-card px-4 py-1.5 rounded-full text-xs text-slate-300 flex items-center justify-center gap-3 pointer-events-auto shadow-xl border border-slate-800">
+                    <span><i class="fa-solid fa-mouse text-sky-400"></i> Kéo chuột trái / Vuốt để xoay 3D</span>
+                    <span class="text-slate-700">•</span>
+                    <span><i class="fa-solid fa-arrows-up-down-left-right text-sky-400"></i> Chuột phải để di chuyển</span>
+                    <span class="text-slate-700">•</span>
+                    <span><i class="fa-solid fa-magnifying-glass-plus text-sky-400"></i> Cuộn chuột để Thu/Phóng</span>
+                </div>
+            </div>
+
+        </main>
+
+    </div>
+
+    <!-- ================================================================= -->
+    <!-- THREE.JS 3D ENGINE & MATHEMATICAL LOGIC                           -->
+    <!-- ================================================================= -->
+    <script>
+        /**
+         * 3D VISUALIZATION FOR AIRPLANE DISPLACEMENT VECTOR IN Oxyz
+         * Mapping between Mathematical Oxyz and Three.js World Coordinates (X_w, Y_w, Z_w):
+         * - Scale: 1 Three.js unit = 100 km (so 445 km = 4.45 units)
+         * - Math +X (West)  -> Three.js +X_w
+         * - Math +Y (South) -> Three.js +Z_w
+         * - Math +Z (Up)    -> Three.js +Y_w
+         * Notice: (+X_w) × (+Z_w) = -Y_w, wait: in right-handed Math Oxyz:
+         * e_x = (1,0,0), e_y = (0,0,1), e_z = (0,1,0).
+         * Let's verify right-hand rule: fingers from West (+X) curl to South (+Y):
+         * In Three.js: +X is right, +Z is toward viewer, +Y is up.
+         * From +X (right) curling toward +Z (front), thumb points DOWN (-Y).
+         * To preserve strict right-handedness where +Z_math is UP (+Y_w):
+         * If +Y_math (South) = +Z_w (front), then +X_math (West) should be -X_w (left)!
+         * Let's check: fingers from -X_w (left, West) curl to +Z_w (front, South) -> thumb points UP (+Y_w, Sky)!
+         * That matches geography perfectly too: Looking at a standard map (North up, South down), West is on the LEFT and East is on the RIGHT!
+         */
+
+        const SCALE = 100; // 100 km per 1 3D unit
+        const SPEED = 890; // km/h
+        const ALTITUDE_KM = 150; // Visual altitude z0 = 1.5 units for clear 3D separation from ground (Oxy)
+
+        const state = {
+            mode: 'SOUTH',        // 'SOUTH' or 'SOUTHEAST'
+            time: 0.5,            // hours (0 to 0.5)
+            highlightStep: 0,     // 0 = all, 1 = dx, 2 = dy, 3 = dz
+            showProjections: true,
+            showCompass: true,
+            isPlaying: false
+        };
+
+        let scene, camera, renderer, controls;
+        let airplaneGroup, pointMSphere, pointNSphere;
+        let vecMNShaft, vecMNCone;
+        let compXShaft, compXCone, compYShaft, compYCone;
+        let projLinesMesh, groundShadowLine;
+        let compassGroup;
+        let tempVec;
+
+        // World anchors for 3D floating labels
+        const anchors = {
+            origin: new THREE.Vector3(0, 0.25, 0),
+            axisX: new THREE.Vector3(-7.4, 0.25, 0),
+            axisXNeg: new THREE.Vector3(7.4, 0.25, 0),
+            axisY: new THREE.Vector3(0, 0.25, 7.4),
+            axisYNeg: new THREE.Vector3(0, 0.25, -7.4),
+            axisZ: new THREE.Vector3(0, 5.4, 0),
+            pointM: new THREE.Vector3(0, ALTITUDE_KM / SCALE, 0),
+            pointN: new THREE.Vector3(0, ALTITUDE_KM / SCALE, 4.45),
+            vecMN: new THREE.Vector3(0, ALTITUDE_KM / SCALE + 0.45, 2.22),
+            compX: new THREE.Vector3(1.5, ALTITUDE_KM / SCALE + 0.35, 0),
+            compY: new THREE.Vector3(3.15, ALTITUDE_KM / SCALE + 0.35, 1.5)
+        };
+
+        const container = document.getElementById('canvas-container');
+
+        // Convert Mathematical (x_km, y_km, z_km) to Three.js World Vector3
+        function mathToWorld(xKm, yKm, zKm) {
+            return new THREE.Vector3(
+                -xKm / SCALE,   // Math +X (West) -> -X_world (Left)
+                zKm / SCALE,    // Math +Z (Up)   -> +Y_world (Up)
+                yKm / SCALE     // Math +Y (South)-> +Z_world (Front)
+            );
+        }
+
+        function safeRenderKaTeX(latex, elementId, options = {}) {
+            const el = document.getElementById(elementId);
+            if (!el) return;
+            try {
+                if (typeof katex !== 'undefined') {
+                    katex.render(latex, el, { throwOnError: false, ...options });
+                } else {
+                    el.innerText = latex;
+                }
+            } catch (err) {
+                el.innerText = latex;
+            }
+        }
+
+        function renderMathInPage() {
+            if (typeof renderMathInElement === 'function') {
+                try {
+                    renderMathInElement(document.body, {
+                        delimiters: [
+                            {left: '$$', right: '$$', display: true},
+                            {left: '\\[', right: '\\]', display: true},
+                            {left: '$', right: '$', display: false},
+                            {left: '\\(', right: '\\)', display: false}
+                        ],
+                        throwOnError: false
+                    });
+                } catch (e) {}
+            }
+        }
+
+        function init3D() {
+            if (typeof THREE === 'undefined') return;
+            tempVec = new THREE.Vector3();
+
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x070b14);
+
+            camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
+            // Position camera in South-East-Up octant so +X (West, left), +Y (South, front), +Z (Up) are crystal clear
+            camera.position.set(10.5, 8.2, 11.5);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: "high-performance" });
+            renderer.setSize(container.clientWidth, container.clientHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            container.appendChild(renderer.domElement);
+
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+            controls.target.set(0.5, 1.2, 2.0);
+            controls.maxPolarAngle = Math.PI / 2 + 0.12;
+
+            // Lighting
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.85);
+            scene.add(ambientLight);
+
+            const dirLight = new THREE.DirectionalLight(0xffffff, 0.9);
+            dirLight.position.set(12, 22, 14);
+            scene.add(dirLight);
+
+            const rimLight = new THREE.DirectionalLight(0x38bdf8, 0.4);
+            rimLight.position.set(-12, 10, -10);
+            scene.add(rimLight);
+
+            buildGroundAndAxes();
+            buildAirplaneAndVectors();
+
+            updateSimulation();
+            window.addEventListener('resize', onWindowResize);
+        }
+
+        function createArrow3D(color, radius = 0.06, headRadius = 0.16, headLength = 0.36) {
+            const shaftGeo = new THREE.CylinderGeometry(radius, radius, 1, 16);
+            const mat = new THREE.MeshStandardMaterial({
+                color: color,
+                emissive: color,
+                emissiveIntensity: 0.4,
+                roughness: 0.25
+            });
+            const shaft = new THREE.Mesh(shaftGeo, mat);
+
+            const coneGeo = new THREE.ConeGeometry(headRadius, headLength, 16);
+            const cone = new THREE.Mesh(coneGeo, mat);
+
+            scene.add(shaft);
+            scene.add(cone);
+            return { shaft, cone, headLength };
+        }
+
+        function updateArrow3D(arrowObj, pStart, pEnd) {
+            const dir = new THREE.Vector3().subVectors(pEnd, pStart);
+            const totalLen = dir.length();
+            if (totalLen < 0.05) {
+                arrowObj.shaft.visible = false;
+                arrowObj.cone.visible = false;
+                return;
+            }
+            arrowObj.shaft.visible = true;
+            arrowObj.cone.visible = true;
+
+            const unitDir = dir.clone().normalize();
+            const headLen = Math.min(arrowObj.headLength, totalLen * 0.45);
+            const shaftLen = Math.max(0.01, totalLen - headLen);
+
+            const shaftEnd = pStart.clone().addScaledVector(unitDir, shaftLen);
+            arrowObj.shaft.scale.set(1, shaftLen, 1);
+            arrowObj.shaft.position.copy(pStart).add(shaftEnd).multiplyScalar(0.5);
+            arrowObj.shaft.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), unitDir);
+
+            arrowObj.cone.scale.set(1, headLen / arrowObj.headLength, 1);
+            arrowObj.cone.position.copy(shaftEnd).addScaledVector(unitDir, headLen * 0.5);
+            arrowObj.cone.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), unitDir);
+        }
+
+        function buildGroundAndAxes() {
+            // Ground Plane (Oxy)
+            const groundGeo = new THREE.PlaneGeometry(15, 15);
+            const groundMat = new THREE.MeshPhysicalMaterial({
+                color: 0x0f172a,
+                transparent: true,
+                opacity: 0.65,
+                depthWrite: false,
+                roughness: 0.3,
+                side: THREE.DoubleSide
+            });
+            const groundMesh = new THREE.Mesh(groundGeo, groundMat);
+            groundMesh.rotation.x = -Math.PI / 2;
+            scene.add(groundMesh);
+
+            // Grid (1 cell = 1 unit = 100 km)
+            const grid = new THREE.GridHelper(14, 14, 0x334155, 0x1e293b);
+            grid.position.y = 0.005;
+            scene.add(grid);
+
+            // Control Tower at Origin O(0,0,0)
+            const towerBase = new THREE.Mesh(
+                new THREE.CylinderGeometry(0.18, 0.25, 0.45, 16),
+                new THREE.MeshStandardMaterial({ color: 0x64748b, metalness: 0.6, roughness: 0.3 })
+            );
+            towerBase.position.y = 0.225;
+            scene.add(towerBase);
+
+            const towerTop = new THREE.Mesh(
+                new THREE.SphereGeometry(0.14, 16, 16),
+                new THREE.MeshStandardMaterial({ color: 0xf59e0b, emissive: 0xf59e0b, emissiveIntensity: 0.8 })
+            );
+            towerTop.position.y = 0.5;
+            scene.add(towerTop);
+
+            // Coordinate Axes:
+            // +Ox (West = -X_world, Red)
+            const axisXPos = createArrow3D(0xef4444, 0.045, 0.14, 0.35);
+            updateArrow3D(axisXPos, new THREE.Vector3(0, 0.02, 0), new THREE.Vector3(-7.0, 0.02, 0));
+
+            // -Ox (East = +X_world, Dashed Red)
+            const negXGeo = new THREE.BufferGeometry().setFromPoints([
+                new THREE.Vector3(0, 0.02, 0),
+                new THREE.Vector3(7.0, 0.02, 0)
+            ]);
+            const negXLine = new THREE.Line(negXGeo, new THREE.LineDashedMaterial({ color: 0x991b1b, dashSize: 0.25, gapSize: 0.2 }));
+            negXLine.computeLineDistances();
+            scene.add(negXLine);
+
+            // +Oy (South = +Z_world, Emerald)
+            const axisYPos = createArrow3D(0x10b981, 0.045, 0.14, 0.35);
+            updateArrow3D(axisYPos, new THREE.Vector3(0, 0.02, 0), new THREE.Vector3(0, 0.02, 7.0));
+
+            // -Oy (North = -Z_world, Dashed Emerald)
+            const negYGeo = new THREE.BufferGeometry().setFromPoints([
+                new THREE.Vector3(0, 0.02, 0),
+                new THREE.Vector3(0, 0.02, -7.0)
+            ]);
+            const negYLine = new THREE.Line(negYGeo, new THREE.LineDashedMaterial({ color: 0x065f46, dashSize: 0.25, gapSize: 0.2 }));
+            negYLine.computeLineDistances();
+            scene.add(negYLine);
+
+            // +Oz (Up = +Y_world, Blue)
+            const axisZPos = createArrow3D(0x3b82f6, 0.045, 0.14, 0.35);
+            updateArrow3D(axisZPos, new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 5.0, 0));
+
+            // Compass Rose Ring on Ground
+            compassGroup = new THREE.Group();
+            const ringGeo = new THREE.RingGeometry(6.7, 6.82, 64);
+            const ringMat = new THREE.MeshBasicMaterial({ color: 0x38bdf8, side: THREE.DoubleSide, transparent: true, opacity: 0.25 });
+            const ring = new THREE.Mesh(ringGeo, ringMat);
+            ring.rotation.x = -Math.PI / 2;
+            ring.position.y = 0.01;
+            compassGroup.add(ring);
+            scene.add(compassGroup);
+        }
+
+        function buildAirplaneAndVectors() {
+            // Starting Point M (at t = 0)
+            pointMSphere = new THREE.Mesh(
+                new THREE.SphereGeometry(0.16, 24, 24),
+                new THREE.MeshStandardMaterial({ color: 0xfbbf24, emissive: 0xf59e0b, emissiveIntensity: 0.7 })
+            );
+            scene.add(pointMSphere);
+
+            // Ending Point N (current airplane position)
+            pointNSphere = new THREE.Mesh(
+                new THREE.SphereGeometry(0.14, 24, 24),
+                new THREE.MeshStandardMaterial({ color: 0x38bdf8, emissive: 0x0284c7, emissiveIntensity: 0.8 })
+            );
+            scene.add(pointNSphere);
+
+            // 3D Airplane Model
+            airplaneGroup = new THREE.Group();
+            const bodyMat = new THREE.MeshStandardMaterial({ color: 0xf8fafc, metalness: 0.4, roughness: 0.2 });
+            const accentMat = new THREE.MeshStandardMaterial({ color: 0x0284c7, emissive: 0x0284c7, emissiveIntensity: 0.4 });
+
+            // Fuselage (aligned along +Z local)
+            const fuselage = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.11, 0.85, 16), bodyMat);
+            fuselage.rotation.x = Math.PI / 2;
+            airplaneGroup.add(fuselage);
+
+            const nose = new THREE.Mesh(new THREE.ConeGeometry(0.11, 0.25, 16), accentMat);
+            nose.rotation.x = Math.PI / 2;
+            nose.position.z = 0.55;
+            airplaneGroup.add(nose);
+
+            // Main Wings
+            const wings = new THREE.Mesh(new THREE.BoxGeometry(1.15, 0.03, 0.22), accentMat);
+            wings.position.z = 0.08;
+            airplaneGroup.add(wings);
+
+            // Tail Fin
+            const tail = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.24, 0.18), accentMat);
+            tail.position.set(0, 0.12, -0.35);
+            airplaneGroup.add(tail);
+
+            const horizTail = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.025, 0.12), bodyMat);
+            horizTail.position.set(0, 0.03, -0.35);
+            airplaneGroup.add(horizTail);
+
+            scene.add(airplaneGroup);
+
+            // Displacement Vector MN (Amber Gold)
+            const vecMN = createArrow3D(0xf59e0b, 0.065, 0.18, 0.4);
+            vecMNShaft = vecMN.shaft;
+            vecMNCone = vecMN.cone;
+
+            // Component Vectors for South-East decomposition (Δx in Red, Δy in Emerald)
+            const compX = createArrow3D(0xef4444, 0.045, 0.13, 0.3);
+            compXShaft = compX.shaft;
+            compXCone = compX.cone;
+
+            const compY = createArrow3D(0x10b981, 0.045, 0.13, 0.3);
+            compYShaft = compY.shaft;
+            compYCone = compY.cone;
+
+            // Dashed Projection Lines
+            const projMat = new THREE.LineDashedMaterial({ color: 0x94a3b8, dashSize: 0.2, gapSize: 0.15 });
+            projLinesMesh = new THREE.LineSegments(new THREE.BufferGeometry(), projMat);
+            scene.add(projLinesMesh);
+
+            // Ground shadow line of displacement
+            const shadowMat = new THREE.LineDashedMaterial({ color: 0xf59e0b, dashSize: 0.22, gapSize: 0.16 });
+            groundShadowLine = new THREE.Line(new THREE.BufferGeometry(), shadowMat);
+            scene.add(groundShadowLine);
+        }
+
+        // --- UPDATE 3D SIMULATION & READOUTS ---
+        function updateSimulation() {
+            const t = parseFloat(state.time);
+            const distKm = SPEED * t; // up to 445 km
+
+            // Starting point M in km: (0, 0, ALTITUDE_KM) so displacement vector MN = (Δx, Δy, Δz)
+            let dx = 0;
+            let dy = 0;
+            const dz = 0;
+
+            if (state.mode === 'SOUTH') {
+                dx = 0;
+                dy = distKm;
+            } else {
+                // South-East: 45° between East (-Ox) and South (+Oy)
+                const cos45 = Math.SQRT1_2;
+                dx = -distKm * cos45;
+                dy = distKm * cos45;
+            }
+
+            const posM = mathToWorld(0, 0, ALTITUDE_KM);
+            const posN = mathToWorld(dx, dy, ALTITUDE_KM + dz);
+
+            pointMSphere.position.copy(posM);
+            pointNSphere.position.copy(posN);
+
+            // Position & Orient Airplane
+            airplaneGroup.position.copy(posN).add(new THREE.Vector3(0, 0.22, 0));
+            if (state.mode === 'SOUTH') {
+                airplaneGroup.rotation.y = 0; // Facing +Z_world (South)
+            } else {
+                airplaneGroup.rotation.y = Math.PI / 4; // Facing +X_world (East) & +Z_world (South)
+            }
+
+            // Update Vector MN Arrow
+            updateArrow3D({ shaft: vecMNShaft, cone: vecMNCone, headLength: 0.4 }, posM, posN);
+
+            // Component decomposition arrows (only visible in SOUTHEAST mode when t > 0)
+            if (state.mode === 'SOUTHEAST' && t > 0.02) {
+                const posCorner = mathToWorld(dx, 0, ALTITUDE_KM);
+                updateArrow3D({ shaft: compXShaft, cone: compXCone, headLength: 0.3 }, posM, posCorner);
+                updateArrow3D({ shaft: compYShaft, cone: compYCone, headLength: 0.3 }, posCorner, posN);
+
+                anchors.compX.copy(posM).lerp(posCorner, 0.5).add(new THREE.Vector3(0, 0.35, -0.25));
+                anchors.compY.copy(posCorner).lerp(posN, 0.5).add(new THREE.Vector3(0.75, 0.35, 0));
+            } else {
+                compXShaft.visible = false;
+                compXCone.visible = false;
+                compYShaft.visible = false;
+                compYCone.visible = false;
+            }
+
+            // Update Dashed Projection Lines to Ground (Oxy) and Axes
+            const groundM = mathToWorld(0, 0, 0);
+            const groundN = mathToWorld(dx, dy, 0);
+            const groundX = mathToWorld(dx, 0, 0);
+            const groundY = mathToWorld(0, dy, 0);
+
+            if (state.showProjections) {
+                const pts = [
+                    posM.x, posM.y, posM.z,   groundM.x, groundM.y, groundM.z,
+                    posN.x, posN.y, posN.z,   groundN.x, groundN.y, groundN.z,
+                    groundN.x, groundN.y, groundN.z,  groundX.x, groundX.y, groundX.z,
+                    groundN.x, groundN.y, groundN.z,  groundY.x, groundY.y, groundY.z
+                ];
+                projLinesMesh.geometry.dispose();
+                projLinesMesh.geometry = new THREE.BufferGeometry();
+                projLinesMesh.geometry.setAttribute('position', new THREE.Float32BufferAttribute(pts, 3));
+                projLinesMesh.computeLineDistances();
+                projLinesMesh.visible = true;
+
+                groundShadowLine.geometry.dispose();
+                groundShadowLine.geometry = new THREE.BufferGeometry().setFromPoints([groundM, groundN]);
+                groundShadowLine.computeLineDistances();
+                groundShadowLine.visible = t > 0.01;
+            } else {
+                projLinesMesh.visible = false;
+                groundShadowLine.visible = false;
+            }
+
+            compassGroup.visible = state.showCompass;
+
+            // Update Floating Label Anchors
+            anchors.pointM.copy(posM).add(new THREE.Vector3(-0.6, 0.35, 0));
+            anchors.pointN.copy(posN).add(new THREE.Vector3(0.65, 0.55, 0));
+            anchors.vecMN.copy(posM).lerp(posN, 0.5).add(new THREE.Vector3(0, 0.45, 0));
+
+            // Update Sidebar Readouts
+            const minutes = Math.round(t * 60);
+            document.getElementById('val-time').innerText = `${t.toFixed(2)} giờ (${minutes} phút)`;
+            document.getElementById('readout-dx').innerText = Math.abs(dx) < 0.01 ? '0' : dx.toFixed(2);
+            document.getElementById('readout-dy').innerText = Math.abs(dy) < 0.01 ? '0' : `+${dy.toFixed(2)}`;
+            document.getElementById('readout-dz').innerText = '0';
+
+            // Update Top-Left HUD & 3D Vector Label
+            const hudTitle = document.getElementById('hud-title');
+            const labelVec = document.getElementById('label-vecMN');
+
+            if (state.mode === 'SOUTH') {
+                hudTitle.innerText = 'VECTƠ ĐỘ DỊCH CHUYỂN (HƯỚNG NAM)';
+                safeRenderKaTeX(`\\overrightarrow{MN} = (0; \\; ${dy.toFixed(0)}; \\; 0) \\; (\\text{km})`, 'hud-formula');
+                labelVec.innerHTML = `$\\overrightarrow{MN} = (0; ${dy.toFixed(0)}; 0)$`;
+            } else {
+                hudTitle.innerText = 'VECTƠ ĐỘ DỊCH CHUYỂN (HƯỚNG ĐÔNG NAM)';
+                if (Math.abs(t - 0.5) < 0.005) {
+                    safeRenderKaTeX(`\\overrightarrow{MN} = \\left(-\\frac{445\\sqrt{2}}{2}; \\; \\frac{445\\sqrt{2}}{2}; \\; 0\\right) \\approx (-314.66; \\; 314.66; \\; 0)`, 'hud-formula');
+                    labelVec.innerHTML = `$\\overrightarrow{MN} \\approx (-314.66; 314.66; 0)$`;
+                } else {
+                    safeRenderKaTeX(`\\overrightarrow{MN} \\approx (${dx.toFixed(1)}; \\; ${dy.toFixed(1)}; \\; 0) \\; (\\text{km})`, 'hud-formula');
+                    labelVec.innerHTML = `$\\overrightarrow{MN} \\approx (${dx.toFixed(1)}; ${dy.toFixed(1)}; 0)$`;
+                }
+            }
+
+            if (typeof renderMathInElement === 'function') {
+                try {
+                    renderMathInElement(labelVec, {
+                        delimiters: [{ left: '$', right: '$', display: false }],
+                        throwOnError: false
+                    });
+                } catch (e) {}
+            }
+        }
+
+        // --- RENDER STEP-BY-STEP SOLUTION ---
+        function renderSolution() {
+            const problemEl = document.getElementById('problem-statement-text');
+            const contentEl = document.getElementById('solution-content');
+            const s = state.highlightStep;
+
+            const stepBoxClass = (stepIdx, borderColor) => {
+                const isHighlighted = (s === 0 || s === stepIdx);
+                return `p-2.5 rounded-lg border transition-all ${
+                    isHighlighted
+                        ? `bg-slate-950/75 ${borderColor} opacity-100`
+                        : 'bg-slate-950/30 border-slate-800/50 opacity-40'
+                }`;
+            };
+
+            if (state.mode === 'SOUTH') {
+                problemEl.innerHTML = `
+                    Một chiếc máy bay sau khi cất cánh và đạt độ cao nhất định thì bay theo <span class="text-emerald-400 font-bold">hướng Nam</span> với vận tốc không đổi $890\\text{ km/h}$ trong nửa giờ ($t = \\frac{1}{2}$ giờ).<br>
+                    <span class="text-amber-400 font-bold">Yêu cầu:</span> Xác định tọa độ của vectơ $\\overrightarrow{MN}$ biểu diễn độ dịch chuyển của máy bay trong khoảng thời gian đó.
+                `;
+
+                contentEl.innerHTML = `
+                    <p>Gọi $M$ là vị trí máy bay lúc bắt đầu tính nửa giờ và $N$ là vị trí máy bay sau nửa giờ. Vectơ độ dịch chuyển là $\\overrightarrow{MN} = (\\Delta x; \\Delta y; \\Delta z)$.</p>
+
+                    <div class="${stepBoxClass(1, 'border-red-500/40')}">
+                        <div class="font-bold text-red-400 mb-1">Bước 1. Xác định thành phần theo trục $Ox$</div>
+                        <p>Trục $Ox$ hướng về phía Tây, trong khi máy bay bay thẳng về phía Nam nên không dịch chuyển theo hướng Tây hoặc Đông:</p>
+                        <div class="text-center font-bold text-red-300 py-1">$$\\Delta x = 0$$</div>
+                    </div>
+
+                    <div class="${stepBoxClass(2, 'border-emerald-500/40')}">
+                        <div class="font-bold text-emerald-400 mb-1">Bước 2. Xác định thành phần theo trục $Oy$</div>
+                        <p>Trục $Oy$ hướng về phía Nam (cùng chiều bay). Với thời gian $t = \\frac{1}{2}$ giờ và vận tốc $v = 890\\text{ km/h}$:</p>
+                        <div class="text-center font-bold text-emerald-300 py-1">$$\\Delta y = v \\cdot t = 890 \\cdot \\frac{1}{2} = 445\\text{ (km)}$$</div>
+                        <p class="text-[11px] text-slate-300">Vì máy bay bay cùng chiều dương của trục $Oy$ nên $\\Delta y = +445 > 0$.</p>
+                    </div>
+
+                    <div class="${stepBoxClass(3, 'border-blue-500/40')}">
+                        <div class="font-bold text-blue-400 mb-1">Bước 3. Xác định thành phần theo trục $Oz$</div>
+                        <p>Máy bay đã đạt độ cao nhất định và bay ngang theo hướng Nam, không thay đổi độ cao:</p>
+                        <div class="text-center font-bold text-blue-300 py-1">$$\\Delta z = 0$$</div>
+                    </div>
+
+                    <div class="p-2.5 rounded-lg bg-emerald-950/50 border border-emerald-500/50 text-center space-y-1">
+                        <div class="text-[11px] font-bold text-emerald-300 uppercase">Kết luận tọa độ vectơ độ dịch chuyển</div>
+                        <div class="text-sm font-extrabold text-white">$$\\overrightarrow{MN} = (0; \\; 445; \\; 0)$$</div>
+                        <p class="text-[11px] text-slate-300 text-left">
+                            <span class="text-amber-400 font-bold">Lưu ý:</span> Hướng Nam là chiều dương trục $Oy$ nên $\\Delta y$ mang dấu dương; độ dài quãng đường bay $|\\overrightarrow{MN}| = 445\\text{ km}$.
+                        </p>
+                    </div>
+                `;
+            } else {
+                problemEl.innerHTML = `
+                    <span class="text-amber-400 font-bold">[Bài toán mở rộng]</span> Cũng với vận tốc $890\\text{ km/h}$ trong nửa giờ ($t = \\frac{1}{2}$ giờ) ở độ cao không đổi, máy bay bay theo <span class="text-amber-400 font-bold">hướng Đông Nam</span>.<br>
+                    <span class="text-amber-400 font-bold">Yêu cầu:</span> Xác định tọa độ của vectơ độ dịch chuyển $\\overrightarrow{MN}$.
+                `;
+
+                contentEl.innerHTML = `
+                    <p>Quãng đường máy bay đi được trong nửa giờ là $MN = v \\cdot t = 890 \\cdot \\frac{1}{2} = 445\\text{ km}$. Hướng Đông Nam nằm trong mặt phẳng ngang $(Oxy)$, hợp với hướng Đông (chiều âm trục $Ox$) và hướng Nam (chiều dương trục $Oy$) mỗi hướng một góc $45^\\circ$.</p>
+
+                    <div class="${stepBoxClass(1, 'border-red-500/40')}">
+                        <div class="font-bold text-red-400 mb-1">Bước 1. Xác định thành phần theo trục $Ox$</div>
+                        <p>Trục $Ox$ hướng về phía <strong>Tây</strong>, nên hướng <strong>Đông</strong> ngược chiều dương của $Ox$ (mang dấu âm):</p>
+                        <div class="text-center font-bold text-red-300 py-1">$$\\Delta x = -445 \\cdot \\cos 45^\\circ = -\\frac{445\\sqrt{2}}{2} \\approx -314.66$$</div>
+                    </div>
+
+                    <div class="${stepBoxClass(2, 'border-emerald-500/40')}">
+                        <div class="font-bold text-emerald-400 mb-1">Bước 2. Xác định thành phần theo trục $Oy$</div>
+                        <p>Trục $Oy$ hướng về phía <strong>Nam</strong> (cùng chiều dương trục $Oy$, mang dấu dương):</p>
+                        <div class="text-center font-bold text-emerald-300 py-1">$$\\Delta y = +445 \\cdot \\sin 45^\\circ = \\frac{445\\sqrt{2}}{2} \\approx 314.66$$</div>
+                    </div>
+
+                    <div class="${stepBoxClass(3, 'border-blue-500/40')}">
+                        <div class="font-bold text-blue-400 mb-1">Bước 3. Xác định thành phần theo trục $Oz$</div>
+                        <p>Máy bay vẫn duy trì độ cao không đổi nên:</p>
+                        <div class="text-center font-bold text-blue-300 py-1">$$\\Delta z = 0$$</div>
+                    </div>
+
+                    <div class="p-2.5 rounded-lg bg-amber-950/50 border border-amber-500/50 text-center space-y-1">
+                        <div class="text-[11px] font-bold text-amber-300 uppercase">Kết luận (Hướng Đông Nam)</div>
+                        <div class="text-sm font-extrabold text-white">$$\\overrightarrow{MN} = \\left(-\\frac{445\\sqrt{2}}{2}; \\; \\frac{445\\sqrt{2}}{2}; \\; 0\\right)$$</div>
+                    </div>
+                `;
+            }
+
+            renderMathInPage();
+        }
+
+        // --- 3D FLOATING LABELS PROJECTION ---
+        function updateScreenLabels() {
+            updateSingleLabel('label-origin', anchors.origin, true);
+            updateSingleLabel('label-axisX', anchors.axisX, true);
+            updateSingleLabel('label-axisX-neg', anchors.axisXNeg, state.showCompass);
+            updateSingleLabel('label-axisY', anchors.axisY, true);
+            updateSingleLabel('label-axisY-neg', anchors.axisYNeg, state.showCompass);
+            updateSingleLabel('label-axisZ', anchors.axisZ, true);
+
+            updateSingleLabel('label-pointM', anchors.pointM, true);
+            updateSingleLabel('label-pointN', anchors.pointN, true);
+            updateSingleLabel('label-vecMN', anchors.vecMN, state.time > 0.04);
+
+            const showCompLabels = (state.mode === 'SOUTHEAST' && state.time > 0.08);
+            updateSingleLabel('label-compX', anchors.compX, showCompLabels);
+            updateSingleLabel('label-compY', anchors.compY, showCompLabels);
+        }
+
+        function updateSingleLabel(elementId, worldPos, isVisible) {
+            const el = document.getElementById(elementId);
+            if (!el || !tempVec) return;
+
+            if (!isVisible) {
+                el.classList.add('hidden');
+                return;
+            }
+            el.classList.remove('hidden');
+
+            tempVec.copy(worldPos);
+            tempVec.project(camera);
+
+            if (tempVec.z > 1) {
+                el.style.opacity = '0';
+                return;
+            }
+
+            const widthHalf = container.clientWidth / 2;
+            const heightHalf = container.clientHeight / 2;
+
+            const x = (tempVec.x * widthHalf) + widthHalf;
+            const y = (-(tempVec.y * heightHalf)) + heightHalf;
+
+            el.style.transform = `translate(-50%, -50%) translate(${x}px, ${y}px)`;
+            el.style.opacity = '1';
+        }
+
+        // --- ANIMATION LOOP ---
+        let lastFrameTime = performance.now();
+        function animate(now) {
+            requestAnimationFrame(animate);
+            const dt = (now - lastFrameTime) / 1000;
+            lastFrameTime = now;
+
+            if (state.isPlaying) {
+                state.time += dt * 0.22; // ~2.2 seconds for full 0.5h flight
+                if (state.time >= 0.5) {
+                    state.time = 0.5;
+                    state.isPlaying = false;
+                    document.getElementById('btn-play-flight').innerHTML = `<i class="fa-solid fa-play"></i> Bay lại`;
+                }
+                document.getElementById('slider-time').value = state.time;
+                updateSimulation();
+            }
+
+            if (controls) controls.update();
+            renderer.render(scene, camera);
+            updateScreenLabels();
+        }
+
+        function onWindowResize() {
+            if (!container || !camera || !renderer) return;
+            camera.aspect = container.clientWidth / container.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(container.clientWidth, container.clientHeight);
+        }
+
+        function switchMode(newMode) {
+            state.mode = newMode;
+            state.time = 0.5;
+            state.isPlaying = false;
+            document.getElementById('slider-time').value = 0.5;
+            document.getElementById('btn-play-flight').innerHTML = `<i class="fa-solid fa-play"></i> Bay thử`;
+
+            const btnSouth = document.getElementById('btn-mode-south');
+            const btnSE = document.getElementById('btn-mode-southeast');
+
+            if (newMode === 'SOUTH') {
+                btnSouth.classList.add('active', 'ring-2', 'ring-emerald-400');
+                btnSE.classList.remove('active', 'ring-2', 'ring-amber-400');
+                animateCameraTo(new THREE.Vector3(10.5, 8.2, 11.5), new THREE.Vector3(0.5, 1.2, 2.0));
+            } else {
+                btnSE.classList.add('active', 'ring-2', 'ring-amber-400');
+                btnSouth.classList.remove('active', 'ring-2', 'ring-emerald-400');
+                animateCameraTo(new THREE.Vector3(9.5, 8.8, 10.5), new THREE.Vector3(1.5, 1.2, 1.8));
+            }
+
+            updateSimulation();
+            renderSolution();
+        }
+
+        function setupUIEventListeners() {
+            // Mobile Tab Switcher
+            const mobileBtn3D = document.getElementById('mobile-tab-3d');
+            const mobileBtnMath = document.getElementById('mobile-tab-math');
+            const sidebar = document.getElementById('sidebar-panel');
+            const viewport = document.getElementById('viewport-panel');
+
+            if (mobileBtn3D && mobileBtnMath) {
+                mobileBtn3D.addEventListener('click', () => {
+                    mobileBtn3D.className = "px-2.5 py-1 rounded-md bg-amber-400 text-slate-950 font-bold transition";
+                    mobileBtnMath.className = "px-2.5 py-1 rounded-md hover:bg-slate-800 transition";
+                    sidebar.classList.add('hidden');
+                    viewport.classList.remove('hidden');
+                    onWindowResize();
+                });
+
+                mobileBtnMath.addEventListener('click', () => {
+                    mobileBtnMath.className = "px-2.5 py-1 rounded-md bg-amber-400 text-slate-950 font-bold transition";
+                    mobileBtn3D.className = "px-2.5 py-1 rounded-md hover:bg-slate-800 transition";
+                    sidebar.classList.remove('hidden');
+                    viewport.classList.add('hidden');
+                });
+            }
+
+            // Mode buttons
+            document.getElementById('btn-mode-south').addEventListener('click', () => switchMode('SOUTH'));
+            document.getElementById('btn-mode-southeast').addEventListener('click', () => switchMode('SOUTHEAST'));
+            document.getElementById('btn-switch-to-se').addEventListener('click', () => {
+                switchMode('SOUTHEAST');
+                // On mobile, switch back to 3D viewport so student immediately sees the 3D vector
+                if (window.innerWidth < 768 && mobileBtn3D) {
+                    mobileBtn3D.click();
+                }
+            });
+
+            // Flight Time Slider & Play/Reset
+            const sliderTime = document.getElementById('slider-time');
+            sliderTime.addEventListener('input', (e) => {
+                state.isPlaying = false;
+                state.time = parseFloat(e.target.value);
+                document.getElementById('btn-play-flight').innerHTML = `<i class="fa-solid fa-play"></i> Bay thử`;
+                updateSimulation();
+            });
+
+            document.getElementById('btn-play-flight').addEventListener('click', () => {
+                if (state.time >= 0.49) {
+                    state.time = 0;
+                }
+                state.isPlaying = !state.isPlaying;
+                document.getElementById('btn-play-flight').innerHTML = state.isPlaying
+                    ? `<i class="fa-solid fa-pause"></i> Tạm dừng`
+                    : `<i class="fa-solid fa-play"></i> Tiếp tục`;
+            });
+
+            document.getElementById('btn-reset-flight').addEventListener('click', () => {
+                state.isPlaying = false;
+                state.time = 0.5;
+                sliderTime.value = 0.5;
+                document.getElementById('btn-play-flight').innerHTML = `<i class="fa-solid fa-play"></i> Bay thử`;
+                updateSimulation();
+            });
+
+            // Visual Toggles
+            document.getElementById('toggle-projections').addEventListener('change', (e) => {
+                state.showProjections = e.target.checked;
+                updateSimulation();
+            });
+
+            document.getElementById('toggle-compass').addEventListener('change', (e) => {
+                state.showCompass = e.target.checked;
+                updateSimulation();
+            });
+
+            // Step Highlight Buttons
+            document.querySelectorAll('.step-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    state.highlightStep = parseInt(btn.getAttribute('data-step'), 10);
+                    document.querySelectorAll('.step-btn').forEach(b => {
+                        b.className = "step-btn py-1.5 px-1 rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 transition";
+                    });
+                    btn.className = "step-btn py-1.5 px-1 rounded-lg bg-emerald-500 text-slate-950 font-extrabold transition";
+                    renderSolution();
+                });
+            });
+
+            // Interactive Quiz for South-East Question
+            document.querySelectorAll('.quiz-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const ans = btn.getAttribute('data-ans');
+                    const feedback = document.getElementById('quiz-feedback');
+                    feedback.classList.remove('hidden');
+
+                    document.querySelectorAll('.quiz-btn').forEach(b => {
+                        b.classList.remove('border-emerald-500', 'bg-emerald-950/50', 'border-red-500', 'bg-red-950/50');
+                        b.querySelector('.quiz-icon').innerHTML = '';
+                    });
+
+                    if (ans === 'B') {
+                        btn.classList.add('border-emerald-500', 'bg-emerald-950/50');
+                        btn.querySelector('.quiz-icon').innerHTML = `<i class="fa-solid fa-circle-check text-emerald-400"></i>`;
+                        feedback.className = "text-xs p-2.5 rounded-lg border border-emerald-500/40 bg-emerald-950/40 text-emerald-200 space-y-1";
+                        feedback.innerHTML = `
+                            <div class="font-bold text-emerald-400"><i class="fa-solid fa-check-circle mr-1"></i> Chính xác!</div>
+                            <div>Hướng <strong>Đông</strong> ngược chiều trục $Ox$ (hướng Tây) nên $\\Delta x = -445\\cos 45^\\circ = -\\frac{445\\sqrt{2}}{2}$, còn hướng <strong>Nam</strong> cùng chiều trục $Oy$ nên $\\Delta y = +\\frac{445\\sqrt{2}}{2}$, và $\\Delta z = 0$.</div>
+                        `;
+                    } else {
+                        btn.classList.add('border-red-500', 'bg-red-950/50');
+                        btn.querySelector('.quiz-icon').innerHTML = `<i class="fa-solid fa-circle-xmark text-red-400"></i>`;
+                        feedback.className = "text-xs p-2.5 rounded-lg border border-red-500/40 bg-red-950/40 text-red-200 space-y-1";
+                        feedback.innerHTML = `
+                            <div class="font-bold text-red-400"><i class="fa-solid fa-triangle-exclamation mr-1"></i> Chưa chính xác, hãy kiểm tra lại dấu!</div>
+                            <div>Gợi ý: Trục $Ox$ hướng về phía <strong>Tây</strong>, vậy hướng <strong>Đông</strong> mang dấu âm ($\\Delta x < 0$). Trục $Oy$ hướng về phía <strong>Nam</strong> nên $\\Delta y > 0$.</div>
+                        `;
+                    }
+                    renderMathInPage();
+                });
+            });
+
+            // Camera Reset & Fullscreen
+            document.getElementById('btn-reset-cam').addEventListener('click', () => {
+                if (state.mode === 'SOUTH') {
+                    animateCameraTo(new THREE.Vector3(10.5, 8.2, 11.5), new THREE.Vector3(0.5, 1.2, 2.0));
+                } else {
+                    animateCameraTo(new THREE.Vector3(9.5, 8.8, 10.5), new THREE.Vector3(1.5, 1.2, 1.8));
+                }
+            });
+
+            document.getElementById('btn-fullscreen').addEventListener('click', () => {
+                try {
+                    if (!document.fullscreenElement) {
+                        document.documentElement.requestFullscreen().catch(() => {});
+                    } else {
+                        document.exitFullscreen().catch(() => {});
+                    }
+                } catch (err) {}
+            });
+        }
+
+        function animateCameraTo(targetPos, targetLookAt) {
+            const startPos = camera.position.clone();
+            const startLook = controls.target.clone();
+            const startTime = performance.now();
+            const duration = 600;
+
+            function step(currentTime) {
+                const elapsed = currentTime - startTime;
+                const progress = Math.min(elapsed / duration, 1);
+                const ease = 1 - Math.pow(1 - progress, 3);
+
+                camera.position.lerpVectors(startPos, targetPos, ease);
+                controls.target.lerpVectors(startLook, targetLookAt, ease);
+                controls.update();
+
+                if (progress < 1) requestAnimationFrame(step);
+            }
+            requestAnimationFrame(step);
+        }
+
+        window.onload = function() {
+            init3D();
+            setupUIEventListeners();
+            renderSolution();
+            requestAnimationFrame(animate);
+        };
+    </script>
+</body>
+</html>
